@@ -1,17 +1,28 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  </div>
+  <v-app id="app">
+    <v-app-bar app color="#8fbcbb" dark>
+      <v-avatar size="36">
+        <img src="./assets/1024.png" />
+      </v-avatar>
+
+      <v-toolbar-title class="ms-2" color="white"><b>OverTime Calculator</b></v-toolbar-title>
+    </v-app-bar>
+
+    <v-main>
+      <v-container bg text-xs-center fill-width>
+        <calculator />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
+import { Component, Vue } from "vue-property-decorator";
+import Calculator from "@/components/Calculator.vue";
 
 @Component({
   components: {
-    HelloWorld,
+    Calculator,
   },
 })
 export default class App extends Vue {}
@@ -19,11 +30,6 @@ export default class App extends Vue {}
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  background-color: #2e3440;
 }
 </style>

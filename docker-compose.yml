@@ -1,0 +1,8 @@
+version: '2.1'
+
+services:
+  client:
+    image: nexusstore.kohaku.moe/windsekirun/overtime-calculator
+    container_name: overtime-calculator
+    ports:
+      - "14500:80"
