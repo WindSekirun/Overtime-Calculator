@@ -1,7 +1,13 @@
 <template>
   <div align-center>
     <div class="d-flex justify-center align-center mt-6">
+      <v-btn icon color="white" class="me-5" @click="clickPreviousMonth()">
+        <v-icon large>mdi-chevron-left</v-icon>
+      </v-btn>
       <span class="text-h4">{{ month }}월</span>
+      <v-btn icon color="white" class="ms-5" @click="clickNextMonth()">
+        <v-icon large>mdi-chevron-right</v-icon>
+      </v-btn>
     </div>
 
     <div class="d-flex justify-center align-center mt-3">
@@ -54,7 +60,9 @@
     <div class="d-flex justify-center align-center mt-12">
       <ul>
         <li>
-          <span class="text-h6 me-2">시급 {{ hourWage }}원</span>
+          <span class="text-h6 me-2"
+            >시급 {{ hourWageLower }}원 ~ {{ hourWage }}원</span
+          >
         </li>
         <li>
           <span class="text-h6 me-2">기준근로 {{ workingGuideTime }}시간</span>
@@ -105,13 +113,15 @@ export default class Calculator extends Vue {
   vacationTime = "";
 
   mounted() {
-    const month = new Date().getMonth() + 1;
-    const store = useStore();
-    store.load(month);
+    const param = this.$route.params.date;
+    let month;
+    if (param) {
+      month = Number(param);
+    } else {
+      month = new Date().getMonth() + 1;
+    }
 
-    this.basicPay = store.basicPay.toString();
-    this.nowWorkingTime = store.nowWorkingTime.toString();
-    this.vacationTime = store.vacationTime.toString();
+    this.loadPage(month);
   }
 
   get month() {
@@ -130,12 +140,17 @@ export default class Calculator extends Vue {
     return this.withCommas(Number(this.basicPay) / useStore().workingGuideTime);
   }
 
+  get hourWageLower() {
+    return this.withCommas(Number(this.basicPay) / 209.0);
+  }
+
   get calculated() {
     const store = useStore();
     const basicPay = Number(this.basicPay);
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const hourWage = basicPay / store.workingGuideTime; // 기본급 * 기준근로시간을 시급으로 계산
+    const hourWage = basicPay / store.workingGuideTime; // 기본급 / 기준근로시간을 시급으로 계산
+    const hourWageLower = basicPay / 209.0; // 기본급 / 209시간을 시급으로 계산
 
     let result = 0;
     if (nowTime > store.underLawTime) {
@@ -151,7 +166,9 @@ export default class Calculator extends Vue {
       result = 0;
     }
 
-    return this.withCommas(result * hourWage);
+    const wage = result * hourWage;
+    const wageLower = result * hourWageLower;
+    return `${this.withCommas(wageLower)} ~ ${this.withCommas(wage)}`;
   }
 
   get description() {
@@ -196,6 +213,15 @@ export default class Calculator extends Vue {
     return content.join("\n");
   }
 
+  loadPage(month: number) {
+    const store = useStore();
+    store.load(month);
+
+    this.basicPay = store.basicPay.toString();
+    this.nowWorkingTime = store.nowWorkingTime.toString();
+    this.vacationTime = store.vacationTime.toString();
+  }
+
   roundNumber(x: number) {
     return Math.round(x * 10) / 10;
   }
@@ -216,6 +242,18 @@ export default class Calculator extends Vue {
 
   inputVacationTime() {
     useStore().saveVacationTime(Number(this.vacationTime));
+  }
+
+  clickPreviousMonth() {
+    const current = useStore().month;
+    this.$router.push(`/${current - 1}`);
+    this.loadPage(current - 1);
+  }
+
+  clickNextMonth() {
+    const current = useStore().month;
+    this.$router.push(`/${current + 1}`);
+    this.loadPage(current + 1);
   }
 }
 </script>

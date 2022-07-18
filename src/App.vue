@@ -10,7 +10,7 @@
 
     <v-main>
       <v-container bg text-xs-center fill-width>
-        <calculator />
+        <router-view> </router-view>
       </v-container>
     </v-main>
   </v-app>
