@@ -207,7 +207,7 @@ export default class Calculator extends Vue {
         );
       }
     } else {
-      content.push("기준근로시간을 넘지 않아서 계산 불가");
+      content.push("⬤ 기준근로시간을 넘지 않아서 계산 불가");
     }
 
     return content.join("\n");

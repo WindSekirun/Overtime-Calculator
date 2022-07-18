@@ -1,6 +1,6 @@
 <template>
   <v-app id="app">
-    <v-app-bar app color="#8fbcbb" dark>
+    <v-app-bar app color="#434c5e" dark>
       <v-avatar size="36">
         <img src="./assets/1024.png" />
       </v-avatar>
