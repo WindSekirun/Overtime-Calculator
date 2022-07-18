@@ -4,16 +4,15 @@
       <v-btn icon color="white" class="me-5" @click="clickPreviousMonth()">
         <v-icon large>mdi-chevron-left</v-icon>
       </v-btn>
-      <span class="text-h4">{{ month }}월</span>
+      <span class="text-h5">{{ month }}월</span>
       <v-btn icon color="white" class="ms-5" @click="clickNextMonth()">
         <v-icon large>mdi-chevron-right</v-icon>
       </v-btn>
     </div>
 
     <div class="d-flex justify-center align-center mt-3">
-      <span class="text-h5 me-2">(세전)</span>
-      <span class="text-h3 font-weight-bold">{{ calculated }}</span>
-      <span class="text-h3">원</span>
+      <span class="text-h4 font-weight-bold">{{ calculated }}</span>
+      <span class="text-h5">원</span>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
@@ -176,9 +175,10 @@ export default class Calculator extends Vue {
     const basicPay = Number(this.basicPay);
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const hourWage = basicPay / store.workingGuideTime; // 기본급 * 기준근로시간을 시급으로 계산
 
     let content: string[] = [];
+
+    content.push("⬤ 모든 계산은 세전 기준");
 
     if (nowTime > store.underLawTime) {
       const underLaw = this.roundNumber(nowTime - store.underLawTime);
