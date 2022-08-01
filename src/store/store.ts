@@ -28,6 +28,7 @@ export const useStore = defineStore('store', {
             basicPay: 0,
             nowWorkingTime: 0,
             vacationTime: 0,
+            overNightTime: 0,
             underLawTime: 0,
             workingGuideTime: 0,
         }
@@ -44,6 +45,7 @@ export const useStore = defineStore('store', {
                 this.basicPay = overtime.overtime.basicPay;
                 this.nowWorkingTime = overtime.overtime.nowWorkingTime;
                 this.vacationTime = overtime.overtime.vacationTime;
+                this.overNightTime = overtime.overtime.overNightTime;
                 this.underLawTime = timetable.underLawTime;
                 this.workingGuideTime = timetable.workingTime;
             }
@@ -76,6 +78,16 @@ export const useStore = defineStore('store', {
             if (overtime) {
                 const index = data.indexOf(overtime);
                 overtime.overtime.vacationTime = vacationTime;
+                data[index] = overtime;
+            }
+            saveData(data);
+        },
+        saveOverNightTime(overNightTime: number) {
+            const data = getDataFromStorage();
+            const overtime = data.find(value => value.month == this.month)
+            if (overtime) {
+                const index = data.indexOf(overtime);
+                overtime.overtime.overNightTime = overNightTime;
                 data[index] = overtime;
             }
             saveData(data);

@@ -11,21 +11,21 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-3">
-      <span class="text-h3 font-weight-bold">{{ calculated }}</span>
+      <span class="text-h3 font-weight-bold">{{ calculated.amount }}</span>
       <span class="text-h4">원</span>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
       <p
         style="white-space: pre-line"
-        class="text-caption"
-        v-html="description"
+        class="body-1"
+        v-html="calculated.build()"
       ></p>
     </div>
 
     <v-row class="d-flex justify-center align-center mt-6">
-      <v-col sm="6" lg="2">
-        <span class="text-h6">총 근로시간</span>
+      <v-col sm="4" lg="2">
+        <span class="text-h6">기본근로 + 연장근로</span>
         <v-text-field
           v-model="nowWorkingTime"
           hide-details
@@ -39,7 +39,22 @@
           suffix="시간"
         />
       </v-col>
-      <v-col sm="6" lg="2">
+      <v-col sm="4" lg="2">
+        <span class="text-h6">야간근로 (10시 이후)</span>
+        <v-text-field
+          v-model="overNightTime"
+          hide-details
+          single-line
+          class="inputNumber"
+          label="야간시간"
+          type="number"
+          @input="inputOverNightTime"
+          placeholder="시간 입력"
+          dark
+          suffix="시간"
+        />
+      </v-col>
+      <v-col sm="4" lg="2">
         <span class="text-h6">휴가 시간</span>
         <v-text-field
           class="inputNumber"
@@ -55,13 +70,10 @@
         />
       </v-col>
     </v-row>
-
     <div class="d-flex justify-center align-center mt-12">
       <ul>
         <li>
-          <span class="text-h6 me-2"
-            >시급 {{ hourWage }}원</span
-          >
+          <span class="text-h6 me-2">시급 {{ hourWageText }}원</span>
         </li>
         <li>
           <span class="text-h6 me-2">기준근로 {{ workingGuideTime }}시간</span>
@@ -69,17 +81,23 @@
         <li>
           <span class="text-h6 me-2">법내연장 {{ underLawTime }}시간</span>
         </li>
+        <li>
+          <span class="text-h6 me-2">주 52시간 최대 {{ maxTime }}시간</span>
+        </li>
       </ul>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
-      <a href="https://github.com/WindSekirun/Overtime-Calculator/releases" class="me-2">
+      <a
+        href="https://github.com/WindSekirun/Overtime-Calculator/releases"
+        class="me-5"
+      >
         <img
           alt="GitHub release (latest by date)"
           src="https://img.shields.io/github/v/release/windsekirun/Overtime-Calculator?style=for-the-badge"
         />
       </a>
-      <a href="https://github.com/WindSekirun/Overtime-Calculator" class="me-2">
+      <a href="https://github.com/WindSekirun/Overtime-Calculator">
         <img
           alt="GitHub"
           src="https://img.shields.io/github/license/WindSekirun/Overtime-Calculator?style=for-the-badge"
@@ -88,9 +106,46 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
-      <v-btn color="#a3be8c" @click="showSetting = !showSetting">
+      <v-btn class="me-5" color="#a3be8c" @click="showSetting = !showSetting">
         데이터 설정하기
       </v-btn>
+      <v-dialog v-model="freqDialog" width="500">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn color="#b48ead" v-bind="attrs" v-on="on">
+            자주 묻는 질문
+          </v-btn>
+        </template>
+
+        <v-card color="#3b4252">
+          <v-card-title
+            class="text-h5"
+            style="background-color: #434c5e; color: #eceff4"
+          >
+            자주 묻는 질문
+          </v-card-title>
+
+          <v-card-text class="mt-5" style="color: #eceff4">
+            <div
+              v-for="(item, index) in freqQuestions"
+              :key="index"
+              class="mt-2"
+            >
+              #{{ index + 1 }}. {{ item.question }}
+              <br />
+              A. {{ item.answer }}
+            </div>
+          </v-card-text>
+
+          <v-divider />
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="#d8dee9" text @click="freqDialog = false">
+              닫기
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
 
     <div v-if="showSetting" class="mt-6">
@@ -116,6 +171,10 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import { useStore } from "@/store/store";
+import { frequencyQuestions } from "@/model/question";
+import { CalculatedResult, DescriptionBuilder } from "@/model/result";
+import lastDayOfMonth from "date-fns/lastDayOfMonth";
+import endOfHour from "date-fns/endOfHour/index";
 
 @Component({
   components: {},
@@ -125,6 +184,9 @@ export default class Calculator extends Vue {
   basicPay = "";
   nowWorkingTime = "";
   vacationTime = "";
+  overNightTime = "";
+  freqDialog = false;
+  hourWage = 0;
 
   mounted() {
     const param = this.$route.params.date;
@@ -136,6 +198,10 @@ export default class Calculator extends Vue {
     }
 
     this.loadPage(month);
+  }
+
+  get freqQuestions() {
+    return frequencyQuestions;
   }
 
   get month() {
@@ -150,76 +216,69 @@ export default class Calculator extends Vue {
     return useStore().underLawTime;
   }
 
-  get hourWage() {
-    return this.withCommas(Number(this.basicPay) / 209.0);
+  get hourWageText() {
+    return this.withCommas(this.hourWage);
+  }
+
+  get maxTime() {
+    const lastDay = lastDayOfMonth(this.month).getDate();
+    return this.roundNumber((52 * lastDay) / 7);
   }
 
   get calculated() {
     const store = useStore();
-    const basicPay = Number(this.basicPay);
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const hourWageLower = basicPay / 209.0; // 기본급 / 209시간을 시급으로 계산
+    const hourWage = Number(this.basicPay) / 209.0;
+    const overNightTime = Number(this.overNightTime) * 1.5; // 야간수당은 1.5배
+    const maxTime = this.maxTime;
 
     let result = 0;
-    if (nowTime > store.underLawTime) {
-      // 법내연장근로를 초과한 경우
-      const x15 = this.roundNumber(nowTime - store.underLawTime) * 1.5;
-      const x1 = this.roundNumber(store.underLawTime - store.workingGuideTime);
-      result += x15 + x1 + vacationTime;
-    } else if (nowTime >= store.workingGuideTime) {
-      // 기준근로시간을 초과한 경우
-      const x1 = this.roundNumber(nowTime - store.workingGuideTime);
-      result += x1 + vacationTime;
-    } else {
-      result = 0;
-    }
+    let builder: DescriptionBuilder[] = [];
+    let errorText: string = "";
 
-    const wage = result * hourWageLower;
-    return `${this.withCommas(wage)}`;
+    const workingTime = nowTime + overNightTime;
+    if (workingTime >= maxTime) {
+      result = 0;
+      errorText = "⬤ 52시간 제도에 따른 최대 시간을 초과하여 계산 불가";
+    } else if (workingTime < this.workingGuideTime) {
+      result = 0;
+      errorText = "⬤ 기준근로시간을 넘지 않아서 계산 불가";
+    } else {
+      if (nowTime > store.underLawTime) {
+        // 법내연장근로를 초과한 경우
+        const x15 = this.roundNumber(nowTime - store.underLawTime) * 1.5;
+        const x1 = this.roundNumber(
+          store.underLawTime - store.workingGuideTime
+        );
+        result += x15 + x1;
+
+        builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5))
+        builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1))
+      } else {
+        // 기준근로시간을 초과한 경우
+        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        result += x1;
+        builder.push(new DescriptionBuilder("기준근로 초과", x1, 1))
+      }
+
+      if (overNightTime != 0) {
+        result += overNightTime
+        builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5))
+      }
+
+      if (vacationTime != 0) {
+        result += vacationTime
+        builder.push(new DescriptionBuilder("휴가시간", vacationTime, 1))
+      }
+    }
+    const wage = result * hourWage;
+    return new CalculatedResult(this.withCommas(wage), builder, hourWage, errorText);
   }
 
-  get description() {
-    const store = useStore();
-    const basicPay = Number(this.basicPay);
-    const nowTime = Number(this.nowWorkingTime);
-    const vacationTime = Number(this.vacationTime);
-
-    let content: string[] = [];
-
-    content.push("⬤ 모든 계산은 세전 기준");
-
-    if (nowTime > store.underLawTime) {
-      const underLaw = this.roundNumber(nowTime - store.underLawTime);
-      const diff = this.roundNumber(
-        store.underLawTime - store.workingGuideTime
-      );
-      content.push(
-        `⬤ 법내연장근로 초과분 <b>'${underLaw}시간'</b> 만큼 <b>1.5배</b> 가산`
-      );
-      content.push(
-        `⬤ '법내연장 - 기준근로시간'인 <b>'${diff}시간'</b> 만큼 <b>1배</b> 가산`
-      );
-      if (vacationTime != 0) {
-        content.push(
-          `⬤ 휴가 시간 <b>'${vacationTime}시간'</b> 만큼 <b>1배</b> 가산`
-        );
-      }
-    } else if (nowTime >= store.workingGuideTime) {
-      const diff = this.roundNumber(nowTime - store.workingGuideTime);
-      content.push(
-        `⬤ 기준근로 초과한 시간인 <b>'${diff}시간'</b> 만큼 <b>1배</b> 가산`
-      );
-      if (vacationTime != 0) {
-        content.push(
-          `⬤ 휴가 시간 <b>'${vacationTime}시간'</b> 만큼 <b>1배</b> 가산`
-        );
-      }
-    } else {
-      content.push("⬤ 기준근로시간을 넘지 않아서 계산 불가");
-    }
-
-    return content.join("\n");
+  multiplyDesc(ratio: number, time: number) {
+    const calculated = this.withCommas(this.hourWage * time);
+    return `만큼 <b>${ratio}배</b> 가산 <b>(${calculated}원)</b>`;
   }
 
   loadPage(month: number) {
@@ -229,6 +288,8 @@ export default class Calculator extends Vue {
     this.basicPay = store.basicPay.toString();
     this.nowWorkingTime = store.nowWorkingTime.toString();
     this.vacationTime = store.vacationTime.toString();
+    this.overNightTime = store.overNightTime.toString();
+    this.hourWage = Number(this.basicPay) / 209.0;
   }
 
   roundNumber(x: number) {
@@ -251,6 +312,10 @@ export default class Calculator extends Vue {
 
   inputVacationTime() {
     useStore().saveVacationTime(Number(this.vacationTime));
+  }
+
+  inputOverNightTime() {
+    useStore().saveOverNightTime(Number(this.overNightTime));
   }
 
   clickPreviousMonth() {
