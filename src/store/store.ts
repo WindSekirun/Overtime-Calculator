@@ -45,7 +45,7 @@ export const useStore = defineStore('store', {
                 this.basicPay = overtime.overtime.basicPay;
                 this.nowWorkingTime = overtime.overtime.nowWorkingTime;
                 this.vacationTime = overtime.overtime.vacationTime;
-                this.overNightTime = overtime.overtime.overNightTime;
+                this.overNightTime = overtime.overtime.overNightTime || 0;
                 this.underLawTime = timetable.underLawTime;
                 this.workingGuideTime = timetable.workingTime;
             }

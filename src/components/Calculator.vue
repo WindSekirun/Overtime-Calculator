@@ -18,14 +18,14 @@
     <div class="d-flex justify-center align-center mt-6">
       <p
         style="white-space: pre-line"
-        class="body-1"
+        :class="descriptionClass"
         v-html="calculated.build()"
       ></p>
     </div>
 
     <v-row class="d-flex justify-center align-center mt-6">
       <v-col sm="4" lg="2">
-        <span class="text-h6">기본근로 + 연장근로</span>
+        <span class="text-h6">기본+연장</span>
         <v-text-field
           v-model="nowWorkingTime"
           hide-details
@@ -40,7 +40,7 @@
         />
       </v-col>
       <v-col sm="4" lg="2">
-        <span class="text-h6">야간근로 (10시 이후)</span>
+        <span class="text-h6">야간근로</span>
         <v-text-field
           v-model="overNightTime"
           hide-details
@@ -174,7 +174,6 @@ import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 import lastDayOfMonth from "date-fns/lastDayOfMonth";
-import endOfHour from "date-fns/endOfHour/index";
 
 @Component({
   components: {},
@@ -225,6 +224,21 @@ export default class Calculator extends Vue {
     return this.roundNumber((52 * lastDay) / 7);
   }
 
+  get descriptionClass() {
+    switch (this.$vuetify.breakpoint.name) {
+      case "xs":
+        return "text-caption";
+      case "sm":
+        return "text-caption";
+      case "md":
+        return "body-1";
+      case "lg":
+        return "body-1";
+      case "xl":
+        return "body-1";
+    }
+  }
+
   get calculated() {
     const store = useStore();
     const nowTime = Number(this.nowWorkingTime);
@@ -253,27 +267,32 @@ export default class Calculator extends Vue {
         );
         result += x15 + x1;
 
-        builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5))
-        builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1))
+        builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
+        builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
       } else {
         // 기준근로시간을 초과한 경우
         const x1 = this.roundNumber(nowTime - store.workingGuideTime);
         result += x1;
-        builder.push(new DescriptionBuilder("기준근로 초과", x1, 1))
+        builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
       }
 
       if (overNightTime != 0) {
-        result += overNightTime
-        builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5))
+        result += overNightTime;
+        builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5));
       }
 
       if (vacationTime != 0) {
-        result += vacationTime
-        builder.push(new DescriptionBuilder("휴가시간", vacationTime, 1))
+        result += vacationTime;
+        builder.push(new DescriptionBuilder("휴가시간", vacationTime, 1));
       }
     }
     const wage = result * hourWage;
-    return new CalculatedResult(this.withCommas(wage), builder, hourWage, errorText);
+    return new CalculatedResult(
+      this.withCommas(wage),
+      builder,
+      hourWage,
+      errorText
+    );
   }
 
   multiplyDesc(ratio: number, time: number) {
