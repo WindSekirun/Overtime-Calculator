@@ -11,8 +11,8 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-3">
-      <span class="text-h4 font-weight-bold">{{ calculated }}</span>
-      <span class="text-h5">원</span>
+      <span class="text-h3 font-weight-bold">{{ calculated }}</span>
+      <span class="text-h4">원</span>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
@@ -60,7 +60,7 @@
       <ul>
         <li>
           <span class="text-h6 me-2"
-            >시급 {{ hourWageLower }}원 ~ {{ hourWage }}원</span
+            >시급 {{ hourWage }}원</span
           >
         </li>
         <li>
@@ -70,6 +70,21 @@
           <span class="text-h6 me-2">법내연장 {{ underLawTime }}시간</span>
         </li>
       </ul>
+    </div>
+
+    <div class="d-flex justify-center align-center mt-6">
+      <a href="https://github.com/WindSekirun/Overtime-Calculator/releases" class="me-2">
+        <img
+          alt="GitHub release (latest by date)"
+          src="https://img.shields.io/github/v/release/windsekirun/Overtime-Calculator?style=for-the-badge"
+        />
+      </a>
+      <a href="https://github.com/WindSekirun/Overtime-Calculator" class="me-2">
+        <img
+          alt="GitHub"
+          src="https://img.shields.io/github/license/WindSekirun/Overtime-Calculator?style=for-the-badge"
+        />
+      </a>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
@@ -136,10 +151,6 @@ export default class Calculator extends Vue {
   }
 
   get hourWage() {
-    return this.withCommas(Number(this.basicPay) / useStore().workingGuideTime);
-  }
-
-  get hourWageLower() {
     return this.withCommas(Number(this.basicPay) / 209.0);
   }
 
@@ -148,7 +159,6 @@ export default class Calculator extends Vue {
     const basicPay = Number(this.basicPay);
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const hourWage = basicPay / store.workingGuideTime; // 기본급 / 기준근로시간을 시급으로 계산
     const hourWageLower = basicPay / 209.0; // 기본급 / 209시간을 시급으로 계산
 
     let result = 0;
@@ -165,9 +175,8 @@ export default class Calculator extends Vue {
       result = 0;
     }
 
-    const wage = result * hourWage;
-    const wageLower = result * hourWageLower;
-    return `${this.withCommas(wageLower)} ~ ${this.withCommas(wage)}`;
+    const wage = result * hourWageLower;
+    return `${this.withCommas(wage)}`;
   }
 
   get description() {
