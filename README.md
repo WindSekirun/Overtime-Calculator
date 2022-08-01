@@ -1,24 +1,8 @@
 # overtime-calculator
 
-## Project setup
-```
-yarn install
-```
+**계산해서 나온 정보의 정확성은 보장하지 않습니다**
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
+포괄임금제 폐지에 맞추어 간단한 입력으로 추가수당을 계산하는 계산기
 
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## License
+MIT License
