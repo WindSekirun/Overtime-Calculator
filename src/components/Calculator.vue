@@ -252,7 +252,7 @@ export default class Calculator extends Vue {
     const store = useStore();
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const overNightTime = Number(this.overNightTime) * 1.5; // 야간수당은 1.5배
+    const overNightTime = Number(this.overNightTime);
     const maxTime = this.maxTime;
 
     let result = 0;
@@ -269,11 +269,11 @@ export default class Calculator extends Vue {
     } else {
       if (nowTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
-        const x15 = this.roundNumber(nowTime - store.underLawTime) * 1.5;
+        const x15 = this.roundNumber(nowTime - store.underLawTime);
         const x1 = this.roundNumber(
           store.underLawTime - store.workingGuideTime
         );
-        result += x15 + x1;
+        result += (x15 * 1.5) + x1;
 
         builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
@@ -285,7 +285,7 @@ export default class Calculator extends Vue {
       }
 
       if (overNightTime != 0) {
-        result += overNightTime;
+        result += (overNightTime * 1.5);
         builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5));
       }
 
