@@ -163,8 +163,14 @@
           light
           suffix="원"
         />
-        <v-btn class="mt-5" color="#bf616a" @click="clickDemoMode()" block style="color: #eceff4">
-          데모모드 설정 
+        <v-btn
+          class="mt-5"
+          color="#bf616a"
+          @click="clickDemoMode()"
+          block
+          style="color: #eceff4"
+        >
+          데모모드 설정
         </v-btn>
       </v-sheet>
     </div>
@@ -246,7 +252,6 @@ export default class Calculator extends Vue {
     const store = useStore();
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
-    const hourWage = Number(this.basicPay) / 209.0;
     const overNightTime = Number(this.overNightTime) * 1.5; // 야간수당은 1.5배
     const maxTime = this.maxTime;
 
@@ -289,11 +294,11 @@ export default class Calculator extends Vue {
         builder.push(new DescriptionBuilder("휴가시간", vacationTime, 1));
       }
     }
-    const wage = result * hourWage;
+    const wage = result * this.hourWage;
     return new CalculatedResult(
       this.withCommas(wage),
       builder,
-      hourWage,
+      this.hourWage,
       errorText
     );
   }
@@ -326,6 +331,7 @@ export default class Calculator extends Vue {
 
   inputBasicPay() {
     useStore().saveBasicPay(Number(this.basicPay));
+    this.hourWage = Number(this.basicPay) / 209.0;
   }
 
   inputNowWorkingTime() {
