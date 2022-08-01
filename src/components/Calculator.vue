@@ -163,6 +163,9 @@
           light
           suffix="원"
         />
+        <v-btn class="mt-5" color="#bf616a" @click="clickDemoMode()" block style="color: #eceff4">
+          데모모드 설정 
+        </v-btn>
       </v-sheet>
     </div>
   </div>
@@ -335,6 +338,11 @@ export default class Calculator extends Vue {
 
   inputOverNightTime() {
     useStore().saveOverNightTime(Number(this.overNightTime));
+  }
+
+  clickDemoMode() {
+    this.basicPay = "1000000";
+    this.hourWage = 1000000 / 209.0;
   }
 
   clickPreviousMonth() {
