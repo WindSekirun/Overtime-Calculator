@@ -16,8 +16,7 @@ export class CalculatedResult {
             return this.errorText;
         } else {
             let description: string[] = [];
-            description.push('⬤ 모든 계산은 세전 기준')
-            this.builder.forEach(element => description.push(element.build(this.hourWage)))
+            this.builder.forEach(element => description.push(element.build(this.hourWage)));
             return description.join("\n");
         }
     }

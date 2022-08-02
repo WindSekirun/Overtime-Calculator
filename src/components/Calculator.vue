@@ -11,6 +11,7 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-3">
+      <span class="text-h6 me-2">(세전)</span>
       <span class="text-h3 font-weight-bold">{{ calculated.amount }}</span>
       <span class="text-h4">원</span>
     </div>
@@ -55,7 +56,7 @@
         />
       </v-col>
       <v-col sm="4" lg="2">
-        <span class="text-h6">휴가 시간</span>
+        <span class="text-h6">휴가시간</span>
         <v-text-field
           class="inputNumber"
           v-model="vacationTime"
@@ -106,13 +107,13 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
-      <v-btn class="me-5" color="#a3be8c" @click="showSetting = !showSetting">
-        데이터 설정하기
+      <v-btn class="me-2" color="#a3be8c" @click="showSetting = !showSetting">
+        통상임금 설정
       </v-btn>
       <v-dialog v-model="freqDialog" width="500">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn color="#b48ead" v-bind="attrs" v-on="on">
-            자주 묻는 질문
+          <v-btn color="#b48ead" v-bind="attrs" v-on="on" class="me-2">
+            FAQ
           </v-btn>
         </template>
 
@@ -146,11 +147,54 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <v-dialog v-model="howDialog" width="500">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn color="#d08770" v-bind="attrs" v-on="on">
+            사용법
+          </v-btn>
+        </template>
+
+        <v-card color="#3b4252">
+          <v-card-title
+            class="text-h5"
+            style="background-color: #434c5e; color: #eceff4"
+          >
+            사용 방법
+          </v-card-title>
+
+          <v-card-text class="mt-5" style="color: #eceff4">
+            과거, 현재, 미래 달에 대한 근무 데이터를 입력하여 초과 근무 시간을 조절할 수 있습니다.<br />
+            <br />
+            '기본+연장' 은 기준근로시간 + 연장시간을 합한 값이며, '연장시간' 에는 아래와 같은 값이 포함됩니다.<br />
+            ⬤ 평일 06시 ~ 22시 이내에서, 휴게시간과 8시간을 제외한 시간의 합<br />
+            ⬤ 토요일 근무 시간의 합<br />
+            만일, 평일 06~22시 사이에서 2시간씩 10영업일을 초과한 경우, 20시간이 됩니다.<br />
+            <br />
+            '야간근로' 는 평일 06시 ~ 22시 이외에서 근무한 시간의 합입니다.<br />
+            <br />
+            '휴가시간' 은 근무를 하지 않은 시간의 합입니다. (2시간 휴가를 4번 사용한 경우 8시간)<br />
+            <br />
+            각 카테고리에 맞는 근무시간을 입력하면, 일정 수식에 따라 계산한 결과와, 중간 계산 결과가 나옵니다. 계산한 데이터는 세금 공제 전 기준으로, 실제 금액과는 다소 차이가 발생할 수 있습니다.<br />
+            <br />
+            참고용으로만 사용해주세요.
+          </v-card-text>
+
+          <v-divider />
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="#d8dee9" text @click="howDialog = false">
+              닫기
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
 
     <div v-if="showSetting" class="mt-6">
       <v-sheet light rounded class="pa-5">
-        기본급 설정
+        세전 통상임금 (기본급 + 식대) 설정
         <v-text-field
           class="inputNumber"
           label="기본급"
@@ -194,6 +238,7 @@ export default class Calculator extends Vue {
   vacationTime = "";
   overNightTime = "";
   freqDialog = false;
+  howDialog = false;
   hourWage = 0;
 
   mounted() {
@@ -263,7 +308,7 @@ export default class Calculator extends Vue {
     if (workingTime >= maxTime) {
       result = 0;
       errorText = "⬤ 52시간 제도에 따른 최대 시간을 초과하여 계산 불가";
-    } else if (workingTime < this.workingGuideTime) {
+    } else if (workingTime + vacationTime < this.workingGuideTime) {
       result = 0;
       errorText = "⬤ 기준근로시간을 넘지 않아서 계산 불가";
     } else {
@@ -273,7 +318,7 @@ export default class Calculator extends Vue {
         const x1 = this.roundNumber(
           store.underLawTime - store.workingGuideTime
         );
-        result += (x15 * 1.5) + x1;
+        result += x15 * 1.5 + x1;
 
         builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
@@ -285,7 +330,7 @@ export default class Calculator extends Vue {
       }
 
       if (overNightTime != 0) {
-        result += (overNightTime * 1.5);
+        result += overNightTime * 1.5;
         builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5));
       }
 
