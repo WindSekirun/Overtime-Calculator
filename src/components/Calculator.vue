@@ -16,6 +16,16 @@
       <span class="text-h4">원</span>
     </div>
 
+    <div class="d-flex justify-center align-center mt-3">
+      <countTo
+        class="text-h5"
+        :startVal="counterWageStart"
+        :endVal="counterWageEnd"
+        :duration="800"
+        suffix="원 / 초"
+      ></countTo>
+    </div>
+
     <div class="d-flex justify-center align-center mt-6">
       <p
         style="white-space: pre-line"
@@ -150,9 +160,7 @@
 
       <v-dialog v-model="howDialog" width="500">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn color="#d08770" v-bind="attrs" v-on="on">
-            사용법
-          </v-btn>
+          <v-btn color="#d08770" v-bind="attrs" v-on="on"> 사용법 </v-btn>
         </template>
 
         <v-card color="#3b4252">
@@ -164,18 +172,24 @@
           </v-card-title>
 
           <v-card-text class="mt-5" style="color: #eceff4">
-            과거, 현재, 미래 달에 대한 근무 데이터를 입력하여 초과 근무 시간을 조절할 수 있습니다.<br />
+            과거, 현재, 미래 달에 대한 근무 데이터를 입력하여 초과 근무 시간을
+            조절할 수 있습니다.<br />
             <br />
-            '기본+연장' 은 기준근로시간 + 연장시간을 합한 값이며, '연장시간' 에는 아래와 같은 값이 포함됩니다.<br />
+            '기본+연장' 은 기준근로시간 + 연장시간을 합한 값이며, '연장시간'
+            에는 아래와 같은 값이 포함됩니다.<br />
             ⬤ 평일 06시 ~ 22시 이내에서, 휴게시간과 8시간을 제외한 시간의 합<br />
             ⬤ 토요일 근무 시간의 합<br />
-            만일, 평일 06~22시 사이에서 2시간씩 10영업일을 초과한 경우, 20시간이 됩니다.<br />
+            만일, 평일 06~22시 사이에서 2시간씩 10영업일을 초과한 경우, 20시간이
+            됩니다.<br />
             <br />
             '야간근로' 는 평일 06시 ~ 22시 이외에서 근무한 시간의 합입니다.<br />
             <br />
-            '휴가시간' 은 근무를 하지 않은 시간의 합입니다. (2시간 휴가를 4번 사용한 경우 8시간)<br />
+            '휴가시간' 은 근무를 하지 않은 시간의 합입니다. (2시간 휴가를 4번
+            사용한 경우 8시간)<br />
             <br />
-            각 카테고리에 맞는 근무시간을 입력하면, 일정 수식에 따라 계산한 결과와, 중간 계산 결과가 나옵니다. 계산한 데이터는 세금 공제 전 기준으로, 실제 금액과는 다소 차이가 발생할 수 있습니다.<br />
+            각 카테고리에 맞는 근무시간을 입력하면, 일정 수식에 따라 계산한
+            결과와, 중간 계산 결과가 나옵니다. 계산한 데이터는 세금 공제 전
+            기준으로, 실제 금액과는 다소 차이가 발생할 수 있습니다.<br />
             <br />
             참고용으로만 사용해주세요.
           </v-card-text>
@@ -227,9 +241,11 @@ import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 import lastDayOfMonth from "date-fns/lastDayOfMonth";
+//@ts-ignore
+import countTo from "vue-count-to";
 
 @Component({
-  components: {},
+  components: { countTo },
 })
 export default class Calculator extends Vue {
   showSetting = false;
@@ -241,6 +257,18 @@ export default class Calculator extends Vue {
   howDialog = false;
   hourWage = 0;
 
+  counterWageStart = 0;
+  counterWageEnd = 0;
+  counterInterval: number | null = null;
+
+  increaseCounter() {
+    const perSecond = this.hourWage / 3600;
+    if (!(this.counterWageStart == 0 && this.counterWageEnd == 0)) {
+      this.counterWageStart += perSecond;
+    }
+    this.counterWageEnd += perSecond;
+  }
+
   mounted() {
     const param = this.$route.params.date;
     let month;
@@ -251,6 +279,14 @@ export default class Calculator extends Vue {
     }
 
     this.loadPage(month);
+    this.counterInterval = setInterval(this.increaseCounter, 1000)
+  }
+
+  beforeUnmount() {
+    if (this.counterInterval) {
+      clearInterval(this.counterInterval);
+      this.counterInterval = null;
+    }
   }
 
   get freqQuestions() {
@@ -418,9 +454,6 @@ span {
 p {
   color: #d8dee9;
 }
-</style>
-
-<style scoped>
 .inputNumber >>> input[type="number"] {
   -moz-appearance: textfield;
 }
