@@ -12,18 +12,13 @@
 
     <div class="d-flex justify-center align-center mt-3">
       <span class="text-h6 me-2">(세전)</span>
-      <span class="text-h3 font-weight-bold">{{ calculated.amount }}</span>
-      <span class="text-h4">원</span>
-    </div>
-
-    <div class="d-flex justify-center align-center mt-3">
       <countTo
-        class="text-h5"
-        :startVal="counterWageStart"
-        :endVal="counterWageEnd"
+        class="text-h3 font-weight-bold"
+        :startVal="calculated.startAmount"
+        :endVal="calculated.amount"
         :duration="800"
-        suffix="원 / 초"
-      ></countTo>
+      />
+      <span class="text-h4">원</span>
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
@@ -94,6 +89,9 @@
         </li>
         <li>
           <span class="text-h6 me-2">주 52시간 최대 {{ maxTime }}시간</span>
+        </li>
+        <li>
+          <span class="text-h6 me-2">Per Second {{ perSecond }}</span>
         </li>
       </ul>
     </div>
@@ -257,16 +255,15 @@ export default class Calculator extends Vue {
   howDialog = false;
   hourWage = 0;
 
-  counterWageStart = 0;
-  counterWageEnd = 0;
+  counterStart = 0;
+  counterEnd = 0;
   counterInterval: number | null = null;
 
   increaseCounter() {
-    const perSecond = this.hourWage / 3600;
-    if (!(this.counterWageStart == 0 && this.counterWageEnd == 0)) {
-      this.counterWageStart += perSecond;
+    if (!(this.counterStart == 0 && this.counterEnd == 0)) {
+      this.counterStart += 1;
     }
-    this.counterWageEnd += perSecond;
+    this.counterEnd += 1;
   }
 
   mounted() {
@@ -279,7 +276,7 @@ export default class Calculator extends Vue {
     }
 
     this.loadPage(month);
-    this.counterInterval = setInterval(this.increaseCounter, 1000)
+    this.counterInterval = setInterval(this.increaseCounter, 1000);
   }
 
   beforeUnmount() {
@@ -329,12 +326,20 @@ export default class Calculator extends Vue {
     }
   }
 
+  get perSecond() {
+    // {{ counterEnd / 60 }}m {{ counterEnd % 60 }}s ({{ roundNumber(hourWage / 3600) }}
+    return `${Math.floor(this.counterEnd / 60)}|${Math.floor(
+      this.counterEnd % 60
+    )}|${this.roundNumber(this.hourWage / 3600)}`;
+  }
+
   get calculated() {
     const store = useStore();
     const nowTime = Number(this.nowWorkingTime);
     const vacationTime = Number(this.vacationTime);
     const overNightTime = Number(this.overNightTime);
     const maxTime = this.maxTime;
+    const perSecond = this.hourWage / 3600;
 
     let result = 0;
     let builder: DescriptionBuilder[] = [];
@@ -358,11 +363,17 @@ export default class Calculator extends Vue {
 
         builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
-      } else {
+      } else if (nowTime > store.workingGuideTime) {
         // 기준근로시간을 초과한 경우
         const x1 = this.roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
+      } else {
+        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        result += x1;
+        const content = new DescriptionBuilder("기준근로 부족 ", x1, 1);
+        content.error = true
+        builder.push(content);
       }
 
       if (overNightTime != 0) {
@@ -378,6 +389,8 @@ export default class Calculator extends Vue {
     const wage = result * this.hourWage;
     return new CalculatedResult(
       this.withCommas(wage),
+      wage + perSecond * this.counterStart,
+      wage + perSecond * this.counterEnd,
       builder,
       this.hourWage,
       errorText
