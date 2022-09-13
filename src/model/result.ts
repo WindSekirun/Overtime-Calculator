@@ -20,8 +20,14 @@ export class CalculatedResult {
             return this.errorText;
         } else {
             let description: string[] = [];
-            this.builder.forEach(element => description.push(element.build(this.hourWage)));
-            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원`)
+            let multiplyList: number[] = [];
+            this.builder.forEach(element => {
+                const build = element.build(this.hourWage);
+                description.push(build[0])
+                multiplyList.push(Number(build[1]))
+            });
+            const sum = multiplyList.reduce((prev, current) => prev + current);
+            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${sum}h)`)
             return description.join("\n");
         }
     }
@@ -42,11 +48,13 @@ export class DescriptionBuilder {
 
     build(hourWage: number) {
         const time = Math.round(this.time * 10) / 10
-        const calculated = Math.ceil(hourWage * (time * this.multiply))
+        const timeMultiply = Math.round(time * this.multiply)
+        const calculated = Math.ceil(hourWage * timeMultiply)
             .toString()
             .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        
 
-        return `⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + " 시간")} (${this.multiply}배 가산, ${calculated}원)`;
+        return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
     }
 
     private wrap(text: string | number) {
