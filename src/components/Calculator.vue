@@ -268,11 +268,9 @@ import { Component, Vue } from "vue-property-decorator";
 import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
-import lastDayOfMonth from "date-fns/lastDayOfMonth";
 //@ts-ignore
 import countTo from "vue-count-to";
 import { formatYearMonth, getUnderLawTime, getYear, roundNumber } from "@/util/date";
-import format from "date-fns/fp/format";
 
 @Component({
   components: { countTo },
