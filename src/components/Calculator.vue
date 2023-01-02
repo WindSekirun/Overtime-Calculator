@@ -237,6 +237,15 @@
         <v-btn
           class="mt-5"
           color="#bf616a"
+          @click="clickLoadPreviousPay()"
+          block
+          style="color: #eceff4"
+        >
+          이전달 데이터 가져오기
+        </v-btn>
+        <v-btn
+          class="mt-5"
+          color="#bf616a"
           @click="clickDemoMode()"
           block
           style="color: #eceff4"
@@ -262,7 +271,7 @@ import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 import lastDayOfMonth from "date-fns/lastDayOfMonth";
 //@ts-ignore
 import countTo from "vue-count-to";
-import { formatYearMonth, getYear } from "@/util/date";
+import { formatYearMonth, getUnderLawTime, getYear, roundNumber } from "@/util/date";
 import format from "date-fns/fp/format";
 
 @Component({
@@ -336,8 +345,7 @@ export default class Calculator extends Vue {
   }
 
   get maxTime() {
-    const lastDay = lastDayOfMonth(this.month).getDate();
-    return this.roundNumber((52 * lastDay) / 7);
+    return getUnderLawTime(useStore().year, useStore().month, 52);
   }
 
   get descriptionClass() {
@@ -359,7 +367,7 @@ export default class Calculator extends Vue {
     // {{ counterEnd / 60 }}m {{ counterEnd % 60 }}s ({{ roundNumber(hourWage / 3600) }}
     return `${Math.floor(this.counterEnd / 60)}|${Math.floor(
       this.counterEnd % 60
-    )}|${this.roundNumber(this.hourWage / 3600)}`;
+    )}|${roundNumber(this.hourWage / 3600)}`;
   }
 
   get displayYearMonth() {
@@ -391,8 +399,8 @@ export default class Calculator extends Vue {
     } else {
       if (nowTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
-        const x15 = this.roundNumber(nowTime - store.underLawTime);
-        const x1 = this.roundNumber(
+        const x15 = roundNumber(nowTime - store.underLawTime);
+        const x1 = roundNumber(
           store.underLawTime - store.workingGuideTime
         );
         result += x15 * 1.5 + x1;
@@ -401,11 +409,11 @@ export default class Calculator extends Vue {
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
       } else if (nowTime > store.workingGuideTime) {
         // 기준근로시간을 초과한 경우
-        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
       } else {
-        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         const content = new DescriptionBuilder("기준근로 부족 ", x1, 1);
         content.error = true;
@@ -450,10 +458,6 @@ export default class Calculator extends Vue {
     this.needMigration = store.needMigration;
   }
 
-  roundNumber(x: number) {
-    return Math.round(x * 10) / 10;
-  }
-
   withCommas(x: number) {
     return Math.ceil(x)
       .toString()
@@ -480,6 +484,13 @@ export default class Calculator extends Vue {
   clickDemoMode() {
     this.basicPay = "1000000";
     this.hourWage = 1000000 / 209.0;
+  }
+
+  clickLoadPreviousPay() {
+    const pay = useStore().loadPreviousBasicPay();
+    this.basicPay = pay.toString();
+    this.hourWage = pay / 209.0;
+    useStore().saveBasicPay(pay);
   }
 
   clickPreviousMonth() {

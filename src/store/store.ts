@@ -1,7 +1,7 @@
 import { YearMonth } from "@/model/month";
 import { Overtime } from "@/model/overtime";
 import { timeTables } from "@/model/timetable";
-import { getYear } from "@/util/date";
+import { getUnderLawTime, getYear } from "@/util/date";
 import { defineStore } from "pinia";
 
 export const storageKey = "OVERTIME_CALCULATOR_DATA_2"
@@ -9,7 +9,7 @@ export const oldStorageKey = "OVERTIME_CALCULATOR_DATA"
 
 function getDataFromStorage(): YearMonth[] {
     let data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    
+
     const year = getYear();
     const needInitialize = !data.some(value => value.year == year);
     if (needInitialize) {
@@ -45,29 +45,24 @@ export const useStore = defineStore('store', {
             this.needMigration = oldData.some(value => value.overtime.basicPay != 0);
 
             const data = getDataFromStorage();
-            
+
             const overtime = data.find(value => value.year == year && value.month == month);
             const timetable = timeTables.find(value => value.year == year && value.month == month);
             this.month = month;
             this.year = year;
-
-            console.log(`overtime: ${overtime}`)
-            console.log(`needMigration: ${this.needMigration}`)
-            console.log(`timetable: ${year}.${month} ${timetable}`)
+            this.underLawTime = getUnderLawTime(year, month, 40);
 
             if (overtime && timetable) {
                 this.basicPay = overtime.overtime.basicPay;
                 this.nowWorkingTime = overtime.overtime.nowWorkingTime;
                 this.vacationTime = overtime.overtime.vacationTime;
                 this.overNightTime = overtime.overtime.overNightTime || 0;
-                this.underLawTime = timetable.underLawTime;
                 this.workingGuideTime = timetable.workingTime;
             } else {
                 this.basicPay = 0;
                 this.nowWorkingTime = 0;
                 this.vacationTime = 0;
                 this.overNightTime = 0;
-                this.underLawTime = 0;
                 this.workingGuideTime = 0;
             }
             saveData(data);
@@ -83,6 +78,23 @@ export const useStore = defineStore('store', {
             this.needMigration = false;
 
             return true;
+        },
+        loadPreviousBasicPay() {
+            const data: YearMonth[] = getDataFromStorage();
+            let year = this.year;
+            let month = this.month;
+            if (month == 1) {
+                year = year - 1;
+                month = 12;
+            } else {
+                month = month - 1;
+            }
+            const yearMonth = data.find(value => value.year == year && value.month == month);
+            if (yearMonth) {
+                return yearMonth.overtime.basicPay;
+            } else {
+                return 0
+            }
         },
         saveBasicPay(basicPay: number) {
             const data = getDataFromStorage();
