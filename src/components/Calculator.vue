@@ -1,10 +1,24 @@
 <template>
   <div align-center>
+    <div v-if="needMigration">
+      <div class="d-flex justify-center align-center mt-3">
+        <span>0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한
+          마이그레이션이 필요합니다.
+        </span>
+      </div>
+
+      <div class="d-flex justify-center align-center mt-3">
+        <v-btn color="#b48ead" class="me-2" @click="clickMigration()">
+          데이터 마이그레이션하기
+        </v-btn>
+      </div>
+    </div>
+
     <div class="d-flex justify-center align-center mt-6">
       <v-btn icon color="white" class="me-5" @click="clickPreviousMonth()">
         <v-icon large>mdi-chevron-left</v-icon>
       </v-btn>
-      <span class="text-h5">{{ month }}월</span>
+      <span class="text-h5">{{ displayYearMonth }}월</span>
       <v-btn icon color="white" class="ms-5" @click="clickNextMonth()">
         <v-icon large>mdi-chevron-right</v-icon>
       </v-btn>
@@ -222,6 +236,15 @@
         <v-btn
           class="mt-5"
           color="#bf616a"
+          @click="clickLoadPreviousPay()"
+          block
+          style="color: #eceff4"
+        >
+          이전달 데이터 가져오기
+        </v-btn>
+        <v-btn
+          class="mt-5"
+          color="#bf616a"
           @click="clickDemoMode()"
           block
           style="color: #eceff4"
@@ -229,6 +252,12 @@
           데모모드 설정
         </v-btn>
       </v-sheet>
+    </div>
+
+    <div class="text-center">
+      <v-snackbar v-model="snackbar" :timeout="3000" top color="purple">
+        {{ snackbarText }}
+      </v-snackbar>
     </div>
   </div>
 </template>
@@ -238,9 +267,9 @@ import { Component, Vue } from "vue-property-decorator";
 import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
-import lastDayOfMonth from "date-fns/lastDayOfMonth";
 //@ts-ignore
 import countTo from "vue-count-to";
+import { formatYearMonth, getUnderLawTime, getYear, roundNumber } from "@/util/date";
 
 @Component({
   components: { countTo },
@@ -254,6 +283,9 @@ export default class Calculator extends Vue {
   freqDialog = false;
   howDialog = false;
   hourWage = 0;
+  needMigration = false;
+  snackbar = false;
+  snackbarText = "";
 
   counterStart = 0;
   counterEnd = 0;
@@ -269,13 +301,16 @@ export default class Calculator extends Vue {
   mounted() {
     const param = this.$route.params.date;
     let month;
+    let year;
     if (param) {
-      month = Number(param);
+      year = Number(param.toString().slice(0, 4));
+      month = Number(param.toString().slice(5, 6));
     } else {
+      year = getYear();
       month = new Date().getMonth() + 1;
     }
 
-    this.loadPage(month);
+    this.loadPage(year, month);
     this.counterInterval = setInterval(this.increaseCounter, 1000);
   }
 
@@ -307,8 +342,7 @@ export default class Calculator extends Vue {
   }
 
   get maxTime() {
-    const lastDay = lastDayOfMonth(this.month).getDate();
-    return this.roundNumber((52 * lastDay) / 7);
+    return getUnderLawTime(useStore().year, useStore().month, 52);
   }
 
   get descriptionClass() {
@@ -330,7 +364,14 @@ export default class Calculator extends Vue {
     // {{ counterEnd / 60 }}m {{ counterEnd % 60 }}s ({{ roundNumber(hourWage / 3600) }}
     return `${Math.floor(this.counterEnd / 60)}|${Math.floor(
       this.counterEnd % 60
-    )}|${this.roundNumber(this.hourWage / 3600)}`;
+    )}|${roundNumber(this.hourWage / 3600)}`;
+  }
+
+  get displayYearMonth() {
+    const year = useStore().year;
+    const month = useStore().month;
+
+    return `${year}. ${month.toString().padStart(2, "0")}`;
   }
 
   get calculated() {
@@ -355,8 +396,8 @@ export default class Calculator extends Vue {
     } else {
       if (nowTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
-        const x15 = this.roundNumber(nowTime - store.underLawTime);
-        const x1 = this.roundNumber(
+        const x15 = roundNumber(nowTime - store.underLawTime);
+        const x1 = roundNumber(
           store.underLawTime - store.workingGuideTime
         );
         result += x15 * 1.5 + x1;
@@ -365,14 +406,14 @@ export default class Calculator extends Vue {
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
       } else if (nowTime > store.workingGuideTime) {
         // 기준근로시간을 초과한 경우
-        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
       } else {
-        const x1 = this.roundNumber(nowTime - store.workingGuideTime);
+        const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         const content = new DescriptionBuilder("기준근로 부족 ", x1, 1);
-        content.error = true
+        content.error = true;
         builder.push(content);
       }
 
@@ -402,19 +443,16 @@ export default class Calculator extends Vue {
     return `만큼 <b>${ratio}배</b> 가산 <b>(${calculated}원)</b>`;
   }
 
-  loadPage(month: number) {
+  loadPage(year: number, month: number) {
     const store = useStore();
-    store.load(month);
+    store.load(year, month);
 
     this.basicPay = store.basicPay.toString();
     this.nowWorkingTime = store.nowWorkingTime.toString();
     this.vacationTime = store.vacationTime.toString();
     this.overNightTime = store.overNightTime.toString();
     this.hourWage = Number(this.basicPay) / 209.0;
-  }
-
-  roundNumber(x: number) {
-    return Math.round(x * 10) / 10;
+    this.needMigration = store.needMigration;
   }
 
   withCommas(x: number) {
@@ -445,16 +483,46 @@ export default class Calculator extends Vue {
     this.hourWage = 1000000 / 209.0;
   }
 
+  clickLoadPreviousPay() {
+    const pay = useStore().loadPreviousBasicPay();
+    this.basicPay = pay.toString();
+    this.hourWage = pay / 209.0;
+    useStore().saveBasicPay(pay);
+  }
+
   clickPreviousMonth() {
-    const current = useStore().month;
-    this.$router.push(`/${current - 1}`);
-    this.loadPage(current - 1);
+    let year = useStore().year;
+    let month = useStore().month;
+    if (month == 1) {
+      year = year - 1;
+      month = 12;
+    } else {
+      month = month - 1;
+    }
+
+    this.$router.push(`/${formatYearMonth(year, month)}`);
+    this.loadPage(year, month);
   }
 
   clickNextMonth() {
-    const current = useStore().month;
-    this.$router.push(`/${current + 1}`);
-    this.loadPage(current + 1);
+    let year = useStore().year;
+    let month = useStore().month;
+    if (month == 12) {
+      year = year + 1;
+      month = 1;
+    } else {
+      month = month + 1;
+    }
+
+    this.$router.push(`/${formatYearMonth(year, month)}`);
+    this.loadPage(year, month);
+  }
+
+  async clickMigration() {
+    await useStore().doMigration();
+    this.needMigration = false;
+    this.snackbarText = "마이그레이션 완료";
+    this.snackbar = true;
   }
 }
 </script>

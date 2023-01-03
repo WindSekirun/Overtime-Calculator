@@ -1,29 +1,33 @@
-import { Month } from "@/model/month";
+import { YearMonth } from "@/model/month";
 import { Overtime } from "@/model/overtime";
 import { timeTables } from "@/model/timetable";
+import { getUnderLawTime, getYear } from "@/util/date";
 import { defineStore } from "pinia";
 
-export const storageKey = "OVERTIME_CALCULATOR_DATA"
+export const storageKey = "OVERTIME_CALCULATOR_DATA_2"
+export const oldStorageKey = "OVERTIME_CALCULATOR_DATA"
 
-function getDataFromStorage(): Month[] {
-    let data: Month[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+function getDataFromStorage(): YearMonth[] {
+    let data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
-    if (data.length == 0) {
-        data = [];
+    const year = getYear();
+    const needInitialize = !data.some(value => value.year == year);
+    if (needInitialize) {
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(month => {
-            data.push(new Month(month, new Overtime(0, 0, 0)));
+            data.push(new YearMonth(year, month, new Overtime(0, 0, 0)));
         })
     }
     return data;
 }
 
-function saveData(data: Month[]) {
+function saveData(data: YearMonth[]) {
     localStorage.setItem(storageKey, JSON.stringify(data));
 }
 
 export const useStore = defineStore('store', {
     state: () => {
         return {
+            year: 0,
             month: 0,
             basicPay: 0,
             nowWorkingTime: 0,
@@ -31,29 +35,70 @@ export const useStore = defineStore('store', {
             overNightTime: 0,
             underLawTime: 0,
             workingGuideTime: 0,
+            needMigration: false,
         }
     },
 
     actions: {
-        load(month: number) {
+        load(year: number, month: number) {
+            const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
+            this.needMigration = oldData.some(value => value.overtime.basicPay != 0);
+
             const data = getDataFromStorage();
-            const overtime = data.find(value => value.month == month);
-            const timetable = timeTables.find(value => value.month == month);
+
+            const overtime = data.find(value => value.year == year && value.month == month);
+            const timetable = timeTables.find(value => value.year == year && value.month == month);
             this.month = month;
+            this.year = year;
+            this.underLawTime = getUnderLawTime(year, month, 40);
 
             if (overtime && timetable) {
                 this.basicPay = overtime.overtime.basicPay;
                 this.nowWorkingTime = overtime.overtime.nowWorkingTime;
                 this.vacationTime = overtime.overtime.vacationTime;
                 this.overNightTime = overtime.overtime.overNightTime || 0;
-                this.underLawTime = timetable.underLawTime;
                 this.workingGuideTime = timetable.workingTime;
+            } else {
+                this.basicPay = 0;
+                this.nowWorkingTime = 0;
+                this.vacationTime = 0;
+                this.overNightTime = 0;
+                this.workingGuideTime = 0;
             }
             saveData(data);
         },
+        async doMigration() {
+            const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
+            const data = getDataFromStorage();
+            oldData.forEach(value => {
+                data.push(new YearMonth(2022, value.month, value.overtime));
+            });
+            saveData(data);
+            localStorage.removeItem(oldStorageKey);
+            this.needMigration = false;
+
+            return true;
+        },
+        loadPreviousBasicPay() {
+            const data: YearMonth[] = getDataFromStorage();
+            let year = this.year;
+            let month = this.month;
+            if (month == 1) {
+                year = year - 1;
+                month = 12;
+            } else {
+                month = month - 1;
+            }
+            const yearMonth = data.find(value => value.year == year && value.month == month);
+            if (yearMonth) {
+                return yearMonth.overtime.basicPay;
+            } else {
+                return 0
+            }
+        },
         saveBasicPay(basicPay: number) {
             const data = getDataFromStorage();
-            const overtime = data.find(value => value.month == this.month)
+            const overtime = data.find(value => value.year == this.year && value.month == this.month)
             console.log('overtime' + overtime);
             if (overtime) {
                 const index = data.indexOf(overtime);
@@ -64,7 +109,7 @@ export const useStore = defineStore('store', {
         },
         saveNowWorkingTime(workingTime: number) {
             const data = getDataFromStorage();
-            const overtime = data.find(value => value.month == this.month)
+            const overtime = data.find(value => value.year == this.year && value.month == this.month)
             if (overtime) {
                 const index = data.indexOf(overtime);
                 overtime.overtime.nowWorkingTime = workingTime;
@@ -74,7 +119,7 @@ export const useStore = defineStore('store', {
         },
         saveVacationTime(vacationTime: number) {
             const data = getDataFromStorage();
-            const overtime = data.find(value => value.month == this.month)
+            const overtime = data.find(value => value.year == this.year && value.month == this.month)
             if (overtime) {
                 const index = data.indexOf(overtime);
                 overtime.overtime.vacationTime = vacationTime;
@@ -84,7 +129,7 @@ export const useStore = defineStore('store', {
         },
         saveOverNightTime(overNightTime: number) {
             const data = getDataFromStorage();
-            const overtime = data.find(value => value.month == this.month)
+            const overtime = data.find(value => value.year == this.year && value.month == this.month)
             if (overtime) {
                 const index = data.indexOf(overtime);
                 overtime.overtime.overNightTime = overNightTime;
