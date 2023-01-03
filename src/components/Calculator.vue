@@ -2,10 +2,9 @@
   <div align-center>
     <div v-if="needMigration">
       <div class="d-flex justify-center align-center mt-3">
-        <span
-          >0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한
-          마이그레이션이 필요합니다.</span
-        >
+        <span>0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한
+          마이그레이션이 필요합니다.
+        </span>
       </div>
 
       <div class="d-flex justify-center align-center mt-3">
