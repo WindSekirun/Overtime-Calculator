@@ -2,7 +2,8 @@
   <div align-center>
     <div v-if="needMigration">
       <div class="d-flex justify-center align-center mt-3">
-        <span>0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한
+        <span
+          >0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한
           마이그레이션이 필요합니다.
         </span>
       </div>
@@ -35,7 +36,7 @@
       <span class="text-h4">원</span>
     </div>
 
-    <div class="d-flex justify-center align-center mt-6">
+    <div class="d-flex justify-center align-center mt-6 pa-2">
       <p
         style="white-space: pre-line"
         :class="descriptionClass"
@@ -43,39 +44,56 @@
       ></p>
     </div>
 
-    <v-row class="d-flex justify-center align-center mt-6">
-      <v-col sm="4" lg="2">
-        <span class="text-h6">기본+연장</span>
+    <v-row class="d-flex justify-center align-center mt-3">
+      <v-col cols="6">
+        <span class="body">기본+연장</span>
         <v-text-field
           v-model="nowWorkingTime"
           hide-details
           single-line
           class="inputNumber"
-          label="근로시간"
+          label="근로"
           type="number"
           @input="inputNowWorkingTime"
           placeholder="시간 입력"
           dark
-          suffix="시간"
+          suffix="H"
         />
       </v-col>
-      <v-col sm="4" lg="2">
-        <span class="text-h6">야간근로</span>
+      <v-col cols="6">
+        <span class="body">야간근로</span>
         <v-text-field
           v-model="overNightTime"
           hide-details
           single-line
           class="inputNumber"
-          label="야간시간"
+          label="야간"
           type="number"
           @input="inputOverNightTime"
           placeholder="시간 입력"
           dark
-          suffix="시간"
+          suffix="H"
         />
       </v-col>
-      <v-col sm="4" lg="2">
-        <span class="text-h6">휴가시간</span>
+    </v-row>
+    <v-row class="d-flex justify-center align-center mt-6">
+      <v-col cols="6">
+        <span class="body">휴일근로</span>
+        <v-text-field
+          class="inputNumber"
+          v-model="workOffTime"
+          hide-details
+          single-line
+          type="number"
+          @input="inputWorkOffTime"
+          label="휴일"
+          placeholder="시간 입력"
+          dark
+          suffix="H"
+        />
+      </v-col>
+      <v-col cols="6">
+        <span class="body">휴가시간</span>
         <v-text-field
           class="inputNumber"
           v-model="vacationTime"
@@ -83,10 +101,10 @@
           single-line
           type="number"
           @input="inputVacationTime"
-          label="휴가시간"
+          label="휴가"
           placeholder="시간 입력"
           dark
-          suffix="시간"
+          suffix="H"
         />
       </v-col>
     </v-row>
@@ -269,7 +287,12 @@ import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 //@ts-ignore
 import countTo from "vue-count-to";
-import { formatYearMonth, getUnderLawTime, getYear, roundNumber } from "@/util/date";
+import {
+  formatYearMonth,
+  getUnderLawTime,
+  getYear,
+  roundNumber,
+} from "@/util/date";
 
 @Component({
   components: { countTo },
@@ -280,6 +303,7 @@ export default class Calculator extends Vue {
   nowWorkingTime = "";
   vacationTime = "";
   overNightTime = "";
+  workOffTime = "";
   freqDialog = false;
   howDialog = false;
   hourWage = 0;
@@ -376,9 +400,10 @@ export default class Calculator extends Vue {
 
   get calculated() {
     const store = useStore();
-    const nowTime = Number(this.nowWorkingTime);
-    const vacationTime = Number(this.vacationTime);
-    const overNightTime = Number(this.overNightTime);
+    const nowTime = Number(this.nowWorkingTime || "0");
+    const vacationTime = Number(this.vacationTime || "0");
+    const overNightTime = Number(this.overNightTime || "0");
+    const workOffTime = Number(this.workOffTime || "0");
     const maxTime = this.maxTime;
     const perSecond = this.hourWage / 3600;
 
@@ -386,7 +411,7 @@ export default class Calculator extends Vue {
     let builder: DescriptionBuilder[] = [];
     let errorText: string = "";
 
-    const workingTime = nowTime + overNightTime;
+    const workingTime = nowTime + overNightTime + workOffTime;
     if (workingTime >= maxTime) {
       result = 0;
       errorText = "⬤ 52시간 제도에 따른 최대 시간을 초과하여 계산 불가";
@@ -397,9 +422,7 @@ export default class Calculator extends Vue {
       if (nowTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
         const x15 = roundNumber(nowTime - store.underLawTime);
-        const x1 = roundNumber(
-          store.underLawTime - store.workingGuideTime
-        );
+        const x1 = roundNumber(store.underLawTime - store.workingGuideTime);
         result += x15 * 1.5 + x1;
 
         builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
@@ -409,7 +432,7 @@ export default class Calculator extends Vue {
         const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
-      } else {
+      } else if (nowTime < store.workingGuideTime) {
         const x1 = roundNumber(nowTime - store.workingGuideTime);
         result += x1;
         const content = new DescriptionBuilder("기준근로 부족 ", x1, 1);
@@ -420,6 +443,11 @@ export default class Calculator extends Vue {
       if (overNightTime != 0) {
         result += overNightTime * 1.5;
         builder.push(new DescriptionBuilder("야간근로", overNightTime, 1.5));
+      }
+
+      if (workOffTime != 0) {
+        result += workOffTime * 2;
+        builder.push(new DescriptionBuilder("휴일근로", workOffTime, 2));
       }
 
       if (vacationTime != 0) {
@@ -451,6 +479,7 @@ export default class Calculator extends Vue {
     this.nowWorkingTime = store.nowWorkingTime.toString();
     this.vacationTime = store.vacationTime.toString();
     this.overNightTime = store.overNightTime.toString();
+    this.workOffTime = store.workOffTime.toString();
     this.hourWage = Number(this.basicPay) / 209.0;
     this.needMigration = store.needMigration;
   }
@@ -476,6 +505,10 @@ export default class Calculator extends Vue {
 
   inputOverNightTime() {
     useStore().saveOverNightTime(Number(this.overNightTime));
+  }
+
+  inputWorkOffTime() {
+    useStore().saveWorkOffTime(Number(this.workOffTime));
   }
 
   clickDemoMode() {

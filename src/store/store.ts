@@ -14,7 +14,7 @@ function getDataFromStorage(): YearMonth[] {
     const needInitialize = !data.some(value => value.year == year);
     if (needInitialize) {
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(month => {
-            data.push(new YearMonth(year, month, new Overtime(0, 0, 0)));
+            data.push(new YearMonth(year, month, new Overtime(0, 0, 0, 0)));
         })
     }
     return data;
@@ -22,6 +22,17 @@ function getDataFromStorage(): YearMonth[] {
 
 function saveData(data: YearMonth[]) {
     localStorage.setItem(storageKey, JSON.stringify(data));
+}
+
+function modifyYearMonth(year: number, month: number, fn: (yearMonth: YearMonth) => void) {
+    const data = getDataFromStorage();
+    const overtime = data.find(value => value.year == year && value.month == month)
+    if (overtime) {
+        const index = data.indexOf(overtime);
+        fn(overtime)
+        data[index] = overtime;
+    }
+    saveData(data);
 }
 
 export const useStore = defineStore('store', {
@@ -35,6 +46,7 @@ export const useStore = defineStore('store', {
             overNightTime: 0,
             underLawTime: 0,
             workingGuideTime: 0,
+            workOffTime: 0,
             needMigration: false,
         }
     },
@@ -58,12 +70,14 @@ export const useStore = defineStore('store', {
                 this.vacationTime = overtime.overtime.vacationTime;
                 this.overNightTime = overtime.overtime.overNightTime || 0;
                 this.workingGuideTime = timetable.workingTime;
+                this.workOffTime = overtime.overtime.workOffTime || 0;
             } else {
                 this.basicPay = 0;
                 this.nowWorkingTime = 0;
                 this.vacationTime = 0;
                 this.overNightTime = 0;
                 this.workingGuideTime = 0;
+                this.workOffTime = 0;
             }
             saveData(data);
         },
@@ -97,45 +111,29 @@ export const useStore = defineStore('store', {
             }
         },
         saveBasicPay(basicPay: number) {
-            const data = getDataFromStorage();
-            const overtime = data.find(value => value.year == this.year && value.month == this.month)
-            console.log('overtime' + overtime);
-            if (overtime) {
-                const index = data.indexOf(overtime);
+            modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.basicPay = basicPay;
-                data[index] = overtime;
-            }
-            saveData(data);
+            });
         },
         saveNowWorkingTime(workingTime: number) {
-            const data = getDataFromStorage();
-            const overtime = data.find(value => value.year == this.year && value.month == this.month)
-            if (overtime) {
-                const index = data.indexOf(overtime);
+            modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.nowWorkingTime = workingTime;
-                data[index] = overtime;
-            }
-            saveData(data);
+            });
         },
         saveVacationTime(vacationTime: number) {
-            const data = getDataFromStorage();
-            const overtime = data.find(value => value.year == this.year && value.month == this.month)
-            if (overtime) {
-                const index = data.indexOf(overtime);
+            modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.vacationTime = vacationTime;
-                data[index] = overtime;
-            }
-            saveData(data);
+            });
         },
         saveOverNightTime(overNightTime: number) {
-            const data = getDataFromStorage();
-            const overtime = data.find(value => value.year == this.year && value.month == this.month)
-            if (overtime) {
-                const index = data.indexOf(overtime);
+            modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.overNightTime = overNightTime;
-                data[index] = overtime;
-            }
-            saveData(data);
-        }
+            });
+        },
+        saveWorkOffTime(workOffTime: number) {
+            modifyYearMonth(this.year, this.month, (overtime) => {
+                overtime.overtime.workOffTime = workOffTime;
+            });
+        },
     }
 })

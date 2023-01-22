@@ -48,12 +48,11 @@ export class DescriptionBuilder {
 
     build(hourWage: number) {
         const time = Math.round(this.time * 10) / 10
-        const timeMultiply = Math.round(time * this.multiply)
+        const timeMultiply = time * this.multiply
         const calculated = Math.ceil(hourWage * timeMultiply)
             .toString()
             .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
         
-
         return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
     }
 
