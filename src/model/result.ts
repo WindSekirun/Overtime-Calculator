@@ -47,8 +47,8 @@ export class DescriptionBuilder {
     }
 
     build(hourWage: number) {
-        const time = Math.round(this.time * 10) / 10
-        const timeMultiply = time * this.multiply
+        const time = Math.round(this.time * 10) / 10;
+        const timeMultiply = Math.round(time * this.multiply * 10) / 10;
         const calculated = Math.ceil(hourWage * timeMultiply)
             .toString()
             .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
