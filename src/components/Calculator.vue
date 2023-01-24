@@ -446,7 +446,7 @@ export default class Calculator extends Vue {
       }
 
       if (workOffTime != 0) {
-        result += workOffTime * 2;
+        result += workOffTime * 1.5;
         builder.push(new DescriptionBuilder("휴일근로", workOffTime, 2));
       }
 
