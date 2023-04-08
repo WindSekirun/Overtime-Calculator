@@ -1,11 +1,14 @@
 import { YearMonth } from "@/model/month";
 import { Overtime } from "@/model/overtime";
+import { ReleaseInfo } from "@/model/release";
 import { timeTables } from "@/model/timetable";
 import { getUnderLawTime, getYear } from "@/util/date";
+import axios from "axios";
 import { defineStore } from "pinia";
 
-export const storageKey = "OVERTIME_CALCULATOR_DATA_2"
-export const oldStorageKey = "OVERTIME_CALCULATOR_DATA"
+export const storageKey = "OVERTIME_CALCULATOR_DATA_2";
+export const oldStorageKey = "OVERTIME_CALCULATOR_DATA";
+export const newReleaseKey = "OVERTIME_CALCULATOR_NEW_RELEASE";
 
 function getDataFromStorage(): YearMonth[] {
     let data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -135,5 +138,11 @@ export const useStore = defineStore('store', {
                 overtime.overtime.workOffTime = workOffTime;
             });
         },
+        getDataFromStorage() {
+            return getDataFromStorage()
+        },
+        restoreData(data: YearMonth[]) {
+            saveData(data);
+        }
     }
 })

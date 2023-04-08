@@ -212,10 +212,15 @@
             만일, 평일 06~22시 사이에서 2시간씩 10영업일을 초과한 경우, 20시간이
             됩니다.<br />
             <br />
-            '야간근로' 는 평일 06시 ~ 22시 이외에서 근무한 시간의 합입니다.<br />
+            '야간근로' 는 평일 06시 ~ 22시 이외에서 근무한 시간의 합입니다. 이
+            때 1.5배를 적용합니다.<br />
             <br />
             '휴가시간' 은 근무를 하지 않은 시간의 합입니다. (2시간 휴가를 4번
             사용한 경우 8시간)<br />
+            <br />
+            '휴일시간' 은 휴무일이 아닌 휴일 (일반적으로 일요일) 에 근무하신
+            시간으로, 통상 주40시간 기준 8시간 초과시 2배, 미만시 1.5배를
+            적용합니다.<br />
             <br />
             각 카테고리에 맞는 근무시간을 입력하면, 일정 수식에 따라 계산한
             결과와, 중간 계산 결과가 나옵니다. 계산한 데이터는 세금 공제 전
@@ -251,24 +256,51 @@
           light
           suffix="원"
         />
-        <v-btn
-          class="mt-5"
-          color="#bf616a"
-          @click="clickLoadPreviousPay()"
-          block
-          style="color: #eceff4"
-        >
-          이전달 데이터 가져오기
-        </v-btn>
-        <v-btn
-          class="mt-5"
-          color="#bf616a"
-          @click="clickDemoMode()"
-          block
-          style="color: #eceff4"
-        >
-          데모모드 설정
-        </v-btn>
+
+        <v-row class="mt-5">
+          <v-col cols="6">
+            <v-btn
+              color="#bf616a"
+              @click="clickLoadPreviousPay()"
+              block
+              style="color: #eceff4"
+            >
+              이전달 데이터 가져오기
+            </v-btn>
+          </v-col>
+          <v-col cols="6">
+            <v-btn
+              color="#bf616a"
+              @click="clickDemoMode()"
+              block
+              style="color: #eceff4"
+            >
+              데모모드 설정
+            </v-btn>
+          </v-col>
+        </v-row>
+        <v-row class="mt-1">
+          <v-col cols="6">
+            <v-btn
+              color="#ebcb8b"
+              @click="clickDataCopy()"
+              block
+              style="color: #2e3440"
+            >
+              데이터 복사
+            </v-btn>
+          </v-col>
+          <v-col cols="6">
+            <v-btn
+              color="#ebcb8b"
+              @click="clickDataRestore()"
+              block
+              style="color: #2e3440"
+            >
+              데이터 복구
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-sheet>
     </div>
 
@@ -293,6 +325,7 @@ import {
   getYear,
   roundNumber,
 } from "@/util/date";
+import { YearMonth } from "@/model/month";
 
 @Component({
   components: { countTo },
@@ -446,8 +479,12 @@ export default class Calculator extends Vue {
       }
 
       if (workOffTime != 0) {
-        result += workOffTime * 1.5;
-        builder.push(new DescriptionBuilder("휴일근로", workOffTime, 2));
+        let multiply = 1.5;
+        if (workOffTime >= 8) {
+          multiply = 2;
+        }
+        result += workOffTime * multiply;
+        builder.push(new DescriptionBuilder("휴일근로", workOffTime, multiply));
       }
 
       if (vacationTime != 0) {
@@ -556,6 +593,30 @@ export default class Calculator extends Vue {
     this.needMigration = false;
     this.snackbarText = "마이그레이션 완료";
     this.snackbar = true;
+  }
+
+  async clickDataCopy() {
+    const list = useStore().getDataFromStorage();
+    const json = JSON.stringify(list);
+    await window.navigator.clipboard.writeText(json);
+    this.snackbarText = "데이터가 복사되었습니다.";
+    this.snackbar = true;
+  }
+
+  async clickDataRestore() {
+    window.navigator.clipboard
+      .readText()
+      .then((response) => {
+        const list: YearMonth[] = JSON.parse(response);
+        useStore().restoreData(list);
+        this.snackbarText =
+          "데이터 복구에 성공했습니다. 새로고침 후 적용됩니다.";
+        this.snackbar = true;
+      })
+      .catch((e) => {
+        this.snackbarText = "데이터 복구에 실패했습니다.";
+        this.snackbar = true;
+      });
   }
 }
 </script>
