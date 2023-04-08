@@ -146,7 +146,7 @@
       </a>
     </div>
 
-    <div class="d-flex justify-center align-center mt-6">
+    <div class="d-flex justify-center align-center mt-6 mb-12">
       <v-btn
         class="me-2"
         color="#a3be8c"
@@ -420,7 +420,7 @@ export default class Calculator extends Vue {
 
     this.loadPage(year, month);
     this.counterInterval = setInterval(this.increaseCounter, 1000);
-    
+
     await useStore().loadRelease();
     this.releaseDialog = useStore().needShowReleaseInfo;
   }
@@ -537,12 +537,18 @@ export default class Calculator extends Vue {
       }
 
       if (workOffTime != 0) {
-        let multiply = 1.5;
         if (workOffTime >= 8) {
-          multiply = 2;
+          const x2time = workOffTime - 8;
+          const x15time = 8;
+
+          result += x2time * 2;
+          result += x15time * 1.5;
+          builder.push(new DescriptionBuilder("휴일근로초과", x2time, 2));
+          builder.push(new DescriptionBuilder("휴일근로", x15time, 1.5));
+        } else {
+          result += workOffTime * 1.5;
+          builder.push(new DescriptionBuilder("휴일근로", workOffTime, 1.5));
         }
-        result += workOffTime * multiply;
-        builder.push(new DescriptionBuilder("휴일근로", workOffTime, multiply));
       }
 
       if (vacationTime != 0) {
