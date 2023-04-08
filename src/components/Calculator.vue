@@ -264,7 +264,7 @@
             class="text-h5"
             style="background-color: #434c5e; color: #eceff4"
           >
-            새로운 기능: v{{ releaseInfo.name }}
+            New: v{{ releaseInfo.name }} ({{ releaseInfo.date }})
           </v-card-title>
 
           <v-card-text class="mt-5" style="color: #eceff4">
@@ -277,7 +277,7 @@
             <v-switch
               color="orange"
               v-model="releaseCheckBox"
-              label="다시 표시하지 않기"
+              label="다시 알리지 않기"
               dark
               dense
             />

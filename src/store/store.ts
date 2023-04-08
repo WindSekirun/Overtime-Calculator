@@ -6,6 +6,7 @@ import { getUnderLawTime, getYear } from "@/util/date";
 import axios from "axios";
 import { defineStore } from "pinia";
 import { marked } from "marked";
+import { DateTime } from "luxon";
 
 export const storageKey = "OVERTIME_CALCULATOR_DATA_2";
 export const oldStorageKey = "OVERTIME_CALCULATOR_DATA";
@@ -93,6 +94,10 @@ export const useStore = defineStore('store', {
                 const render = `${text} <a target='_blank' href="${href}"> link </a>`
                 return render;
             }
+            renderer.heading = function(text, level, raw, slugger) {
+                const render = marked.Renderer.prototype.heading.call(this, text, level, raw, slugger);
+                return "<br />" + render + "<br />";
+            }
             marked.setOptions({
                 renderer: renderer,
                 breaks: true,
@@ -101,9 +106,11 @@ export const useStore = defineStore('store', {
             const response = (await axios.get("https://api.github.com/repos/windsekirun/overtime-calculator/releases/latest")).data;
             const tagName = response["tag_name"];
             const body = response["body"];
-            const info = new ReleaseInfo(tagName, marked(body));
+            const date = DateTime.fromISO(response["created_at"]).toFormat("yyyy.MM.dd");
+            const info = new ReleaseInfo(tagName, marked(body), date);
 
             this.releaseInfo = info;
+            console.log
             this.needShowReleaseInfo = tagName != localStorage.getItem(newReleaseKey);
         },
         async doMigration() {
