@@ -147,12 +147,23 @@
     </div>
 
     <div class="d-flex justify-center align-center mt-6">
-      <v-btn class="me-2" color="#a3be8c" @click="showSetting = !showSetting">
+      <v-btn
+        class="me-2"
+        color="#a3be8c"
+        @click="showSetting = !showSetting"
+        style="color: #2e3440"
+      >
         통상임금 설정
       </v-btn>
       <v-dialog v-model="freqDialog" width="500">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn color="#b48ead" v-bind="attrs" v-on="on" class="me-2">
+          <v-btn
+            color="#b48ead"
+            v-bind="attrs"
+            v-on="on"
+            class="me-2"
+            style="color: #2e3440"
+          >
             FAQ
           </v-btn>
         </template>
@@ -190,7 +201,14 @@
 
       <v-dialog v-model="howDialog" width="500">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn color="#d08770" v-bind="attrs" v-on="on"> 사용법 </v-btn>
+          <v-btn
+            color="#d08770"
+            v-bind="attrs"
+            v-on="on"
+            style="color: #2e3440"
+          >
+            사용법
+          </v-btn>
         </template>
 
         <v-card color="#3b4252">
@@ -234,6 +252,37 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn color="#d8dee9" text @click="howDialog = false">
+              닫기
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="releaseDialog" width="500" persistent>
+        <v-card color="#3b4252">
+          <v-card-title
+            class="text-h5"
+            style="background-color: #434c5e; color: #eceff4"
+          >
+            새로운 기능: v{{ releaseInfo.name }}
+          </v-card-title>
+
+          <v-card-text class="mt-5" style="color: #eceff4">
+            <span v-html="releaseInfo.body" class="release"></span>
+          </v-card-text>
+
+          <v-divider />
+
+          <v-card-actions>
+            <v-switch
+              color="orange"
+              v-model="releaseCheckBox"
+              label="다시 표시하지 않기"
+              dark
+              dense
+            />
+            <v-spacer></v-spacer>
+            <v-btn color="#d8dee9" text @click="closeReleaseDialog()">
               닫기
             </v-btn>
           </v-card-actions>
@@ -339,6 +388,8 @@ export default class Calculator extends Vue {
   workOffTime = "";
   freqDialog = false;
   howDialog = false;
+  releaseDialog = true;
+  releaseCheckBox = false;
   hourWage = 0;
   needMigration = false;
   snackbar = false;
@@ -355,7 +406,7 @@ export default class Calculator extends Vue {
     this.counterEnd += 1;
   }
 
-  mounted() {
+  async mounted() {
     const param = this.$route.params.date;
     let month;
     let year;
@@ -369,6 +420,9 @@ export default class Calculator extends Vue {
 
     this.loadPage(year, month);
     this.counterInterval = setInterval(this.increaseCounter, 1000);
+    
+    await useStore().loadRelease();
+    this.releaseDialog = useStore().needShowReleaseInfo;
   }
 
   beforeUnmount() {
@@ -400,6 +454,10 @@ export default class Calculator extends Vue {
 
   get maxTime() {
     return getUnderLawTime(useStore().year, useStore().month, 52);
+  }
+
+  get releaseInfo() {
+    return useStore().releaseInfo;
   }
 
   get descriptionClass() {
@@ -593,6 +651,13 @@ export default class Calculator extends Vue {
     this.needMigration = false;
     this.snackbarText = "마이그레이션 완료";
     this.snackbar = true;
+  }
+
+  closeReleaseDialog() {
+    this.releaseDialog = false;
+    if (this.releaseCheckBox) {
+      useStore().saveNotShowReleaseDialog();
+    }
   }
 
   async clickDataCopy() {

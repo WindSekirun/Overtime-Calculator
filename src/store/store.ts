@@ -5,6 +5,7 @@ import { timeTables } from "@/model/timetable";
 import { getUnderLawTime, getYear } from "@/util/date";
 import axios from "axios";
 import { defineStore } from "pinia";
+import { marked } from "marked";
 
 export const storageKey = "OVERTIME_CALCULATOR_DATA_2";
 export const oldStorageKey = "OVERTIME_CALCULATOR_DATA";
@@ -51,6 +52,8 @@ export const useStore = defineStore('store', {
             workingGuideTime: 0,
             workOffTime: 0,
             needMigration: false,
+            releaseInfo: null as ReleaseInfo | null,
+            needShowReleaseInfo: false,
         }
     },
 
@@ -83,6 +86,25 @@ export const useStore = defineStore('store', {
                 this.workOffTime = 0;
             }
             saveData(data);
+        },
+        async loadRelease() {
+            const renderer = new marked.Renderer();
+            renderer.link = function(href, title, text) {
+                const render = `${text} <a target='_blank' href="${href}"> link </a>`
+                return render;
+            }
+            marked.setOptions({
+                renderer: renderer,
+                breaks: true,
+            })
+
+            const response = (await axios.get("https://api.github.com/repos/windsekirun/overtime-calculator/releases/latest")).data;
+            const tagName = response["tag_name"];
+            const body = response["body"];
+            const info = new ReleaseInfo(tagName, marked(body));
+
+            this.releaseInfo = info;
+            this.needShowReleaseInfo = tagName != localStorage.getItem(newReleaseKey);
         },
         async doMigration() {
             const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
@@ -143,6 +165,12 @@ export const useStore = defineStore('store', {
         },
         restoreData(data: YearMonth[]) {
             saveData(data);
+        },
+        saveNotShowReleaseDialog() {
+            if (this.releaseInfo) {
+                this.needShowReleaseInfo = false;
+                localStorage.setItem(newReleaseKey, this.releaseInfo.name);
+            }
         }
     }
 })
