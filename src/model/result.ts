@@ -1,4 +1,4 @@
-import { roundNumber } from "@/util/date";
+import { roundNumber } from "@/util/number";
 
 export class CalculatedResult {
     origin: string;
@@ -55,7 +55,7 @@ export class DescriptionBuilder {
             .toString()
             .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
         
-        return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
+        return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}x, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
     }
 
     private wrap(text: string | number) {

@@ -236,7 +236,7 @@
             '휴가시간' 은 근무를 하지 않은 시간의 합입니다. (2시간 휴가를 4번
             사용한 경우 8시간)<br />
             <br />
-            '휴일시간' 은 휴무일이 아닌 휴일 (일반적으로 일요일) 에 근무하신
+            '휴일시간'은 휴무일이 아닌 휴일 (일반적으로 일요일) 에 근무한
             시간으로, 통상 주40시간 기준 8시간 초과시 2배, 미만시 1.5배를
             적용합니다.<br />
             <br />
@@ -371,10 +371,10 @@ import countTo from "vue-count-to";
 import {
   formatYearMonth,
   getUnderLawTime,
-  getYear,
-  roundNumber,
+  getYear
 } from "@/util/date";
 import { YearMonth } from "@/model/month";
+import { roundNumber } from "@/util/number";
 
 @Component({
   components: { countTo },
