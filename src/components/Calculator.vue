@@ -123,7 +123,7 @@
           <span class="text-h6 me-2">주 52시간 최대 {{ maxTime }}시간</span>
         </li>
         <li>
-          <span class="text-h6 me-2">Per Second {{ perSecond }}</span>
+          <span class="text-h6 me-2">₩{{ perMinutes }}/분</span>
         </li>
       </ul>
     </div>
@@ -475,11 +475,9 @@ export default class Calculator extends Vue {
     }
   }
 
-  get perSecond() {
+  get perMinutes() {
     // {{ counterEnd / 60 }}m {{ counterEnd % 60 }}s ({{ roundNumber(hourWage / 3600) }}
-    return `${Math.floor(this.counterEnd / 60)}|${Math.floor(
-      this.counterEnd % 60
-    )}|${roundNumber(this.hourWage / 3600)}`;
+    return `${roundNumber(this.hourWage / 60)}`;
   }
 
   get displayYearMonth() {

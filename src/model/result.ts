@@ -1,3 +1,5 @@
+import { roundNumber } from "@/util/date";
+
 export class CalculatedResult {
     origin: string;
     startAmount: number;
@@ -26,7 +28,7 @@ export class CalculatedResult {
                 description.push(build[0])
                 multiplyList.push(Number(build[1]))
             });
-            const sum = multiplyList.reduce((prev, current) => prev + current);
+            const sum = roundNumber(multiplyList.reduce((prev, current) => prev + current));
             description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${sum}h)`)
             return description.join("\n");
         }
