@@ -16,5 +16,9 @@ export const frequencyQuestions: Question[] = [
     {
         "question": "데이터는 어디에 저장되나요?",
         "answer": "별도 서버가 아닌 브라우저 저장소 내 저장됩니다."
+    },
+    {
+        "question": "임시공휴일이 있으면 계산이 어떻게 될까요?",
+        "answer": "임시공휴일의 경우, 기준근로시간은 감소하지만 법내연장은 그대로입니다."
     }
 ]
