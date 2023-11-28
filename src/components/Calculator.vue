@@ -114,7 +114,7 @@
           <span class="text-h6 me-2">시급 {{ hourWageText }}원</span>
         </li>
         <li>
-          <span class="text-h6 me-2">기준근로 {{ workingGuideTime }}시간</span>
+          <span class="text-h6 me-2">기준근로 {{ workingGuideTime }}시간 {{ diffEmoji }}</span>
         </li>
         <li>
           <span class="text-h6 me-2">법내연장 {{ underLawTime }}시간</span>
@@ -368,11 +368,7 @@ import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 //@ts-ignore
 import countTo from "vue-count-to";
-import {
-  formatYearMonth,
-  getUnderLawTime,
-  getYear
-} from "@/util/date";
+import { formatYearMonth, getUnderLawTime, getYear } from "@/util/date";
 import { YearMonth } from "@/model/month";
 import { roundNumber } from "@/util/number";
 
@@ -473,6 +469,18 @@ export default class Calculator extends Vue {
       case "xl":
         return "body-1";
     }
+  }
+
+  get diffEmoji() {
+    const guideTime = useStore().workingGuideTime;
+    const lawTime = useStore().underLawTime;
+    let result;
+    if (guideTime > lawTime) {
+      result = "🔥🔥";
+    } else if (lawTime - guideTime < 3.0) {
+      result = "🔥";
+    }
+    return result;
   }
 
   get perMinutes() {
