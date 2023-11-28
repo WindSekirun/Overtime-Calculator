@@ -22,6 +22,15 @@ function getDataFromStorage(): YearMonth[] {
             data.push(new YearMonth(year, month, new Overtime(0, 0, 0, 0)));
         })
     }
+
+    const nextYear = getYear() + 1;
+    const needNextInitialize = !data.some(value => value.year == nextYear);
+    const containsTimetable = timeTables.some(value => value.year == nextYear);
+    if (needNextInitialize && containsTimetable) {
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(month => {
+            data.push(new YearMonth(nextYear, month, new Overtime(0, 0, 0, 0)));
+        })
+    }
     return data;
 }
 
