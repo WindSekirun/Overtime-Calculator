@@ -114,7 +114,9 @@
           <span class="text-h6 me-2">시급 {{ hourWageText }}원</span>
         </li>
         <li>
-          <span class="text-h6 me-2">기준근로 {{ workingGuideTime }}시간 {{ diffEmoji }}</span>
+          <span class="text-h6 me-2"
+            >기준근로 {{ workingGuideTime }}시간 {{ diffEmoji }}</span
+          >
         </li>
         <li>
           <span class="text-h6 me-2">법내연장 {{ underLawTime }}시간</span>
@@ -223,12 +225,10 @@
             과거, 현재, 미래 달에 대한 근무 데이터를 입력하여 초과 근무 시간을
             조절할 수 있습니다.<br />
             <br />
-            '기본+연장' 은 기준근로시간 + 연장시간을 합한 값이며, '연장시간'
-            에는 아래와 같은 값이 포함됩니다.<br />
-            ⬤ 평일 06시 ~ 22시 이내에서, 휴게시간과 8시간을 제외한 시간의 합<br />
-            ⬤ 토요일 근무 시간의 합<br />
-            만일, 평일 06~22시 사이에서 2시간씩 10영업일을 초과한 경우, 20시간이
-            됩니다.<br />
+            '이번달 총 계획시간' 은 플래너에 기재된 시간으로, '야간근로',
+            '휴가시간', '휴일시간' 모두를 포함합니다. '계획 등록하기' 기능을
+            통해 이번달 계획시간을 계산하여 사용하면 더 쉽게 계산할 수
+            있습니다.<br />
             <br />
             '야간근로' 는 평일 06시 ~ 22시 이외에서 근무한 시간의 합입니다. 이
             때 1.5배를 적용합니다.<br />
@@ -241,8 +241,8 @@
             적용합니다.<br />
             <br />
             각 카테고리에 맞는 근무시간을 입력하면, 일정 수식에 따라 계산한
-            결과와, 중간 계산 결과가 나옵니다. 계산한 데이터는 세금 공제 전
-            기준으로, 실제 금액과는 다소 차이가 발생할 수 있습니다.<br />
+            결과가 나옵니다. 계산한 데이터는 세금 공제 전 기준으로, 실제
+            금액과는 다소 차이가 발생할 수 있습니다.<br />
             <br />
             참고용으로만 사용해주세요.
           </v-card-text>
@@ -258,7 +258,12 @@
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="releaseDialog" width="500" persistent v-if="releaseInfo">
+      <v-dialog
+        v-model="releaseDialog"
+        width="500"
+        persistent
+        v-if="releaseInfo"
+      >
         <v-card color="#3b4252">
           <v-card-title
             class="text-h5"
@@ -517,7 +522,15 @@ export default class Calculator extends Vue {
       errorText = "⬤ 기준근로시간을 넘지 않아서 계산 불가";
     } else {
       // 법내연장/기준근로시간에 따라 계산이 되어야 하는 기본 근로시간
-      const baseWorkTime = workingTime - overNightTime - workOffTime - vacationTime;
+      const baseWorkTime =
+        workingTime - overNightTime - workOffTime - vacationTime;
+      const baseDescription = new DescriptionBuilder(
+        "기본 근로시간",
+        baseWorkTime,
+        0
+      );
+      baseDescription.base = true;
+      builder.push(baseDescription);
       if (baseWorkTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
         const x15 = roundNumber(baseWorkTime - store.underLawTime);

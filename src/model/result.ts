@@ -40,12 +40,14 @@ export class DescriptionBuilder {
     time: number;
     multiply: number;
     error: boolean;
+    base: boolean;
 
     constructor(title: string, time: number, multiply: number) {
         this.time = time;
         this.multiply = multiply;
         this.title = title;
         this.error = false;
+        this.base = false;
     }
 
     build(hourWage: number) {
@@ -53,9 +55,13 @@ export class DescriptionBuilder {
         const timeMultiply = Math.round(time * this.multiply * 10) / 10;
         const calculated = Math.ceil(hourWage * timeMultiply)
             .toString()
-            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         
-        return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}x, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
+        if (this.base) {
+            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")}`, String(timeMultiply)]
+        } else {
+            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}x, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
+        }
     }
 
     private wrap(text: string | number) {
