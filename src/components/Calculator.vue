@@ -258,7 +258,7 @@
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="releaseDialog" width="500" persistent>
+      <v-dialog v-model="releaseDialog" width="500" persistent v-if="releaseInfo">
         <v-card color="#3b4252">
           <v-card-title
             class="text-h5"
