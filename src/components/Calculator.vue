@@ -46,7 +46,7 @@
 
     <v-row class="d-flex justify-center align-center mt-3">
       <v-col cols="6">
-        <span class="body">기본+연장</span>
+        <span class="body">이번달 총 계획 시간</span>
         <v-text-field
           v-model="nowWorkingTime"
           hide-details
@@ -508,7 +508,7 @@ export default class Calculator extends Vue {
     let builder: DescriptionBuilder[] = [];
     let errorText: string = "";
 
-    const workingTime = nowTime + overNightTime + workOffTime;
+    const workingTime = nowTime;
     if (workingTime >= maxTime) {
       result = 0;
       errorText = "⬤ 52시간 제도에 따른 최대 시간을 초과하여 계산 불가";
@@ -516,21 +516,23 @@ export default class Calculator extends Vue {
       result = 0;
       errorText = "⬤ 기준근로시간을 넘지 않아서 계산 불가";
     } else {
-      if (nowTime > store.underLawTime) {
+      // 법내연장/기준근로시간에 따라 계산이 되어야 하는 기본 근로시간
+      const baseWorkTime = workingTime - overNightTime - workOffTime - vacationTime;
+      if (baseWorkTime > store.underLawTime) {
         // 법내연장근로를 초과한 경우
-        const x15 = roundNumber(nowTime - store.underLawTime);
+        const x15 = roundNumber(baseWorkTime - store.underLawTime);
         const x1 = roundNumber(store.underLawTime - store.workingGuideTime);
         result += x15 * 1.5 + x1;
 
         builder.push(new DescriptionBuilder("법내연장근로 초과", x15, 1.5));
         builder.push(new DescriptionBuilder("법내연장 - 기준근로", x1, 1));
-      } else if (nowTime > store.workingGuideTime) {
+      } else if (baseWorkTime > store.workingGuideTime) {
         // 기준근로시간을 초과한 경우
-        const x1 = roundNumber(nowTime - store.workingGuideTime);
+        const x1 = roundNumber(baseWorkTime - store.workingGuideTime);
         result += x1;
         builder.push(new DescriptionBuilder("기준근로 초과", x1, 1));
-      } else if (nowTime < store.workingGuideTime) {
-        const x1 = roundNumber(nowTime - store.workingGuideTime);
+      } else if (baseWorkTime < store.workingGuideTime) {
+        const x1 = roundNumber(baseWorkTime - store.workingGuideTime);
         result += x1;
         const content = new DescriptionBuilder("기준근로 부족 ", x1, 1);
         content.error = true;
