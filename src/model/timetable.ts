@@ -44,7 +44,7 @@ export const timeTables: TimeTable[] = [
     { year: 2024, month: 7, workingTime: 184 },
     { year: 2024, month: 8, workingTime: 168 }, 
     { year: 2024, month: 9, workingTime: 144 }, 
-    { year: 2024, month: 10, workingTime: 168 }, 
+    { year: 2024, month: 10, workingTime: 160 }, // 국군의날 휴일
     { year: 2024, month: 11, workingTime: 168 },
     { year: 2024, month: 12, workingTime: 168 }, 
 ]
