@@ -2,10 +2,10 @@ name: Release Drafter
 
 on:
   push:
-    # branches to consider in the event; optional, defaults to all
     branches:
       - main
-  # pull_request event is required only for autolabeler
+    tags:
+      - 'v*'
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -15,14 +15,12 @@ permissions:
 jobs:
   update_release_draft:
     permissions:
-      # write permission is required to create a github release
       contents: write
-      # write permission is required for autolabeler
-      # otherwise, read permission is required at least
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      # (Optional) GitHub Enterprise requires GITHUB_BASE_URL and GITHUB_API_URL
       - uses: release-drafter/release-drafter@v6
+        with:
+          publish: ${{ startsWith(github.ref, 'refs/tags/') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
