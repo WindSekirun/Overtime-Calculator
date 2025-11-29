@@ -8,12 +8,12 @@ import { defineStore } from "pinia";
 import { marked } from "marked";
 import { DateTime } from "luxon";
 
-export const storageKey = "OVERTIME_CALCULATOR_DATA_2";
-export const oldStorageKey = "OVERTIME_CALCULATOR_DATA";
+export const storageKey = "OVERTIME_CALCULATOR_DATA_V3";
+export const oldStorageKey = "OVERTIME_CALCULATOR_DATA_2";
 export const newReleaseKey = "OVERTIME_CALCULATOR_NEW_RELEASE";
 
 function getDataFromStorage(): YearMonth[] {
-    let data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
     const year = getYear();
     const needInitialize = !data.some(value => value.year == year);
@@ -55,12 +55,12 @@ export const useStore = defineStore('store', {
             year: 0,
             month: 0,
             basicPay: 0,
-            nowWorkingTime: 0,
-            vacationTime: 0,
-            overNightTime: 0,
-            underLawTime: 0,
-            workingGuideTime: 0,
-            workOffTime: 0,
+            nowWorkingTime: 0, // Minutes
+            vacationTime: 0, // Minutes
+            overNightTime: 0, // Minutes
+            underLawTime: 0, // Minutes
+            workingGuideTime: 0, // Minutes
+            workOffTime: 0, // Minutes
             needMigration: false,
             releaseInfo: null as ReleaseInfo | null,
             needShowReleaseInfo: false,
@@ -70,7 +70,9 @@ export const useStore = defineStore('store', {
     actions: {
         load(year: number, month: number) {
             const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
-            this.needMigration = oldData.some(value => value.overtime.basicPay != 0);
+            // Check if V3 data is empty but V2 exists to determine migration need
+            const v3Data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            this.needMigration = oldData.length > 0 && v3Data.length === 0;
 
             const data = getDataFromStorage();
 
@@ -78,14 +80,14 @@ export const useStore = defineStore('store', {
             const timetable = timeTables.find(value => value.year == year && value.month == month);
             this.month = month;
             this.year = year;
-            this.underLawTime = getUnderLawTime(year, month, 40);
+            this.underLawTime = Math.round(getUnderLawTime(year, month, 40) * 60);
 
             if (overtime && timetable) {
                 this.basicPay = overtime.overtime.basicPay;
                 this.nowWorkingTime = overtime.overtime.nowWorkingTime;
                 this.vacationTime = overtime.overtime.vacationTime;
                 this.overNightTime = overtime.overtime.overNightTime || 0;
-                this.workingGuideTime = timetable.workingTime;
+                this.workingGuideTime = timetable.workingTime * 60;
                 this.workOffTime = overtime.overtime.workOffTime || 0;
             } else {
                 this.basicPay = 0;
@@ -112,26 +114,59 @@ export const useStore = defineStore('store', {
                 breaks: true,
             })
 
-            const response = (await axios.get("https://api.github.com/repos/windsekirun/overtime-calculator/releases/latest")).data;
-            const tagName = response["tag_name"];
-            const body = response["body"];
-            const date = DateTime.fromISO(response["created_at"]).toFormat("yyyy.MM.dd");
-            const info = new ReleaseInfo(tagName, marked(body), date);
-
-            this.releaseInfo = info;
-            console.log
-            this.needShowReleaseInfo = tagName != localStorage.getItem(newReleaseKey);
+            try {
+                const response = (await axios.get("https://api.github.com/repos/windsekirun/overtime-calculator/releases/latest")).data;
+                const tagName = response["tag_name"];
+                const body = response["body"];
+                const date = DateTime.fromISO(response["created_at"]).toFormat("yyyy.MM.dd");
+                const info = new ReleaseInfo(tagName, marked(body), date);
+    
+                this.releaseInfo = info;
+                this.needShowReleaseInfo = tagName != localStorage.getItem(newReleaseKey);
+            } catch (e) {
+                console.error("Failed to load release info", e);
+            }
         },
         async doMigration() {
             const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
             const data = getDataFromStorage();
-            oldData.forEach(value => {
-                data.push(new YearMonth(2022, value.month, value.overtime));
-            });
-            saveData(data);
-            localStorage.removeItem(oldStorageKey);
-            this.needMigration = false;
+            
+            // Migration: Convert hours to minutes
+            oldData.forEach(oldItem => {
+                // Find corresponding item in new data (initialized by getDataFromStorage) or create new if not exists (though getDataFromStorage handles initialization for current/next year)
+                // But oldData might contain older years.
+                // Simply adding them might duplicate if they are already initialized? 
+                // getDataFromStorage initializes current and next year.
+                // Ideally we merge.
+                
+                // For simplicity, we try to find existing entry in 'data', update it. If not found, add it.
+                const existing = data.find(d => d.year === oldItem.year && d.month === oldItem.month);
+                
+                const newOvertime = new Overtime(
+                    oldItem.overtime.basicPay,
+                    Math.round(oldItem.overtime.nowWorkingTime * 60),
+                    Math.round(oldItem.overtime.vacationTime * 60),
+                    Math.round((oldItem.overtime.workOffTime || 0) * 60)
+                );
+                newOvertime.overNightTime = Math.round((oldItem.overtime.overNightTime || 0) * 60);
 
+                if (existing) {
+                    existing.overtime = newOvertime;
+                } else {
+                    data.push(new YearMonth(oldItem.year, oldItem.month, newOvertime));
+                }
+            });
+            
+            saveData(data);
+            // localStorage.removeItem(oldStorageKey); // Optional: keep for safety or remove? 
+            // User prompt didn't specify keeping, but usually good to keep for backup until confirmed. 
+            // But to stop showing migration message, we should probably rename or set flag.
+            // Since logic checks "oldData.length > 0 && v3Data.length === 0", once v3Data is populated, migration flag might turn false?
+            // No, "oldData.length > 0" is always true if we don't delete.
+            // "v3Data.length === 0" will be false after migration.
+            // So migration message will disappear.
+            
+            this.needMigration = false;
             return true;
         },
         loadPreviousBasicPay() {
@@ -155,26 +190,31 @@ export const useStore = defineStore('store', {
             modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.basicPay = basicPay;
             });
+            this.basicPay = basicPay;
         },
         saveNowWorkingTime(workingTime: number) {
             modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.nowWorkingTime = workingTime;
             });
+            this.nowWorkingTime = workingTime;
         },
         saveVacationTime(vacationTime: number) {
             modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.vacationTime = vacationTime;
             });
+            this.vacationTime = vacationTime;
         },
         saveOverNightTime(overNightTime: number) {
             modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.overNightTime = overNightTime;
             });
+            this.overNightTime = overNightTime;
         },
         saveWorkOffTime(workOffTime: number) {
             modifyYearMonth(this.year, this.month, (overtime) => {
                 overtime.overtime.workOffTime = workOffTime;
             });
+            this.workOffTime = workOffTime;
         },
         getDataFromStorage() {
             return getDataFromStorage()

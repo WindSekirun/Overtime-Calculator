@@ -1,17 +1,14 @@
-import Vue from 'vue';
-import { createPinia, PiniaVuePlugin } from 'pinia'
-import App from './App.vue';
-import vuetify from './plugins/vuetify';
-import router from './router';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+import vuetify from './plugins/vuetify'
+import router from './router'
+import '@mdi/font/css/materialdesignicons.css'
 
-Vue.use(PiniaVuePlugin);
-const pinia = createPinia()
+const app = createApp(App)
 
-Vue.config.productionTip = false;
+app.use(createPinia())
+app.use(router)
+app.use(vuetify)
 
-new Vue({
-  vuetify,
-  router,
-  render: (h) => h(App),
-  pinia
-}).$mount('#app');
+app.mount('#app')

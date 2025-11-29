@@ -1,15 +1,7 @@
-import Vue from "vue";
-import VueRouter, {
-    NavigationGuardNext,
-    RawLocation,
-    Route,
-    RouteConfig
-} from "vue-router";
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import Calculator from "../components/Calculator.vue";
 
-Vue.use(VueRouter);
-
-const routes: Array<RouteConfig> = [
+const routes: Array<RouteRecordRaw> = [
     {
         path: "/:date?",
         name: "Calculator",
@@ -17,7 +9,8 @@ const routes: Array<RouteConfig> = [
     }
 ]
 
-const router = new VueRouter({
+const router = createRouter({
+    history: createWebHashHistory(),
     routes
 });
 

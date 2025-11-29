@@ -21,15 +21,17 @@ export class CalculatedResult {
         if (this.errorText) {
             return this.errorText;
         } else {
-            let description: string[] = [];
-            let multiplyList: number[] = [];
+            const description: string[] = [];
+            const multiplyList: number[] = []; // effective minutes
             this.builder.forEach(element => {
                 const build = element.build(this.hourWage);
                 description.push(build[0])
                 multiplyList.push(Number(build[1]))
             });
-            const sum = roundNumber(multiplyList.reduce((prev, current) => prev + current));
-            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${sum}h)`)
+            const sumMinutes = roundNumber(multiplyList.reduce((prev, current) => prev + current));
+            const h = Math.floor(sumMinutes / 60);
+            const m = Math.round(sumMinutes % 60);
+            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${h}h ${m}m)`)
             return description.join("\n");
         }
     }
@@ -37,7 +39,7 @@ export class CalculatedResult {
 
 export class DescriptionBuilder {
     title: string;
-    time: number;
+    time: number; // Minutes
     multiply: number;
     error: boolean;
     base: boolean;
@@ -51,16 +53,26 @@ export class DescriptionBuilder {
     }
 
     build(hourWage: number) {
-        const time = Math.round(this.time * 10) / 10;
-        const timeMultiply = Math.round(time * this.multiply * 10) / 10;
-        const calculated = Math.ceil(hourWage * timeMultiply)
+        const timeMinutes = this.time;
+        const effectiveMinutes = timeMinutes * this.multiply;
+        
+        const h = Math.floor(timeMinutes / 60);
+        const m = Math.round(timeMinutes % 60);
+        const timeStr = `${h}h ${m}m`;
+
+        const effH = Math.floor(effectiveMinutes / 60);
+        const effM = Math.round(effectiveMinutes % 60);
+        const effStr = `${effH}h ${effM}m`;
+        
+        // Wage calculation: (Effective Minutes / 60) * HourWage
+        const calculated = Math.ceil((effectiveMinutes / 60) * hourWage)
             .toString()
             .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         
         if (this.base) {
-            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")}`, String(timeMultiply)]
+            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(timeStr)}`, String(effectiveMinutes)]
         } else {
-            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(time + "h")} (${this.multiply}x, ${timeMultiply}h➜${calculated}원)`, String(timeMultiply)]
+            return [`⬤ ${this.wrap(this.title)} ${this.wrap("➜")} ${this.wrap(timeStr)} (${this.multiply}x, ${effStr}➜${calculated}원)`, String(effectiveMinutes)]
         }
     }
 
