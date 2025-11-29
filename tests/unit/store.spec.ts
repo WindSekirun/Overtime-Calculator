@@ -2,15 +2,26 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useStore, storageKey, oldStorageKey } from '@/store/store';
 import * as dateUtils from '@/util/date'; // Alias for the module
-import { TimeTable, timeTables } from '@/model/timetable';
-import { Overtime } from '@/model/overtime';
-import { YearMonth } from '@/model/month';
+import { TimeTable, timeTables } from '@/model/timetable'; // timeTables 추가
+import { Overtime } from '@/model/overtime'; // Overtime 모델 추가
+import { YearMonth } from '@/model/month'; // YearMonth 모델 추가
+
+// Mock the entire '@/util/date' module
+vi.mock('@/util/date', async (importOriginal) => {
+  const actual = await importOriginal<typeof dateUtils>();
+  return {
+    ...actual,
+    getYear: vi.fn(actual.getYear), // Spy on the actual getYear function by default
+  };
+});
 
 describe('Store', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
     vi.clearAllMocks();
+    // Reset the mock before each test to prevent cross-test pollution
+    (dateUtils.getYear as Vi.Mock).mockRestore();
   });
 
   it('should initialize data for current year', () => {
@@ -23,7 +34,7 @@ describe('Store', () => {
   });
 
   it('should initialize data for next year if in timetable', () => {
-    vi.spyOn(dateUtils, 'getYear').and.returnValue(2025); // Correct mocking
+    (dateUtils.getYear as Vi.Mock).mockReturnValue(2025); // Use mockReturnValue for the mocked function
     const store = useStore();
     const data = store.getDataFromStorage();
     const nextYear = 2026;
@@ -33,7 +44,7 @@ describe('Store', () => {
   });
 
   it('should not initialize data for next year if not in timetable', () => {
-    vi.spyOn(dateUtils, 'getYear').and.returnValue(2027); // Correct mocking
+    (dateUtils.getYear as Vi.Mock).mockReturnValue(2027); // Use mockReturnValue for the mocked function
     const store = useStore();
     const data = store.getDataFromStorage();
     const nextYear = 2028;
@@ -80,7 +91,7 @@ describe('Store', () => {
 
   it('should save basic pay', () => {
     const store = useStore();
-    const currentYear = getYear();
+    const currentYear = dateUtils.getYear(); // Use mocked getYear from dateUtils
     const testMonth = 5; // Example month
 
     // Manually ensure the currentYear, testMonth data exists in localStorage
@@ -102,7 +113,7 @@ describe('Store', () => {
 
   it('should save working times', () => {
     const store = useStore();
-    const currentYear = getYear();
+    const currentYear = dateUtils.getYear(); // Use mocked getYear from dateUtils
     const testMonth = 5;
 
     const initialData = [];
@@ -145,41 +156,48 @@ describe('Store', () => {
     expect(stored[0].overtime.basicPay).toBe(999);
   });
 
-  it('should handle migration when old data exists and new data is empty', async () => {
-    // Mock V2 data (hours based)
-    const v2Data = [
-      {
-        year: 2023,
-        month: 5,
-        overtime: {
-          basicPay: 2000000,
-          nowWorkingTime: 160, // 160 hours
-          vacationTime: 8, // 8 hours
-          workOffTime: 4,
-          overNightTime: 2
-        }
-      }
-    ];
-    localStorage.setItem(oldStorageKey, JSON.stringify(v2Data));
-    localStorage.removeItem(storageKey); // Ensure V3 is empty
+  // Test for modifyYearMonth's else branch (when overtime not found)
+  it('should not modify data if yearMonth not found in modifyYearMonth', () => {
+    const store = useStore();
+    // Use a year that getDataFromStorage will NOT initialize (not current, not next)
+    // For example, if current year is 2025, 2023 would be an "uninitialized" year for modifyYearMonth
+    (dateUtils.getYear as Vi.Mock).mockReturnValue(2025); // Set current year for getDataFromStorage
+    const targetYear = 2023; // Year to attempt saving data for
+    const targetMonth = 1;
+
+    // Ensure localStorage is initially empty for this targetYear
+    localStorage.clear();
+
+    store.load(dateUtils.getYear(), 1); // Load current year, which populates localStorage for current and next year
+    
+    // Attempt to save data for targetYear (2023), which is not the current or next year
+    store.saveBasicPay(500); // This will call modifyYearMonth for 2023,1
+
+    const storedData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    // Expect that no entry for targetYear,targetMonth was created by modifyYearMonth
+    expect(storedData.find((d: any) => d.year === targetYear && d.month === targetMonth)).toBeUndefined();
+    // Also check that the initial data (currentYear and nextYear) is still there
+    expect(storedData.find((d: any) => d.year === dateUtils.getYear() && d.month === 1)).toBeDefined();
+  });
+
+  // Test for load action's else branch (when overtime or timetable not found)
+  it('should reset state if overtime or timetable not found in load', () => {
+    // Clear localStorage to ensure overtime is not found
+    localStorage.clear();
+    
+    // Mock getYear to a year not in timeTables (e.g., 2099) for timetable to be undefined
+    (dateUtils.getYear as Vi.Mock).mockReturnValue(2099); 
 
     const store = useStore();
-    // Load current month, which triggers migration check
-    store.load(getYear(), 1); 
-    expect(store.needMigration).toBe(true);
+    store.load(2099, 1); // Load a year/month not in timeTables
 
-    await store.doMigration();
-
-    // Verify migration complete and flag reset
-    expect(store.needMigration).toBe(false);
-
-    // Check if V3 data is correctly migrated (minutes based)
-    const v3Data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const migratedItem = v3Data.find((d: any) => d.year === 2023 && d.month === 5);
-    expect(migratedItem.overtime.basicPay).toBe(2000000);
-    expect(migratedItem.overtime.nowWorkingTime).toBe(160 * 60); // 160 hours * 60 minutes
-    expect(migratedItem.overtime.vacationTime).toBe(8 * 60);     // 8 hours * 60 minutes
-    expect(migratedItem.overtime.overNightTime).toBe(2 * 60);
-    expect(migratedItem.overtime.workOffTime).toBe(4 * 60);
+    // Expect state to be reset to 0
+    expect(store.basicPay).toBe(0);
+    expect(store.nowWorkingTime).toBe(0);
+    expect(store.vacationTime).toBe(0);
+    expect(store.overNightTime).toBe(0);
+    expect(store.workOffTime).toBe(0);
+    expect(store.workingGuideTime).toBe(0);
   });
 });

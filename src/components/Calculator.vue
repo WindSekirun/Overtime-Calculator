@@ -1,18 +1,5 @@
 <template>
   <div class="text-center">
-    <div v-if="needMigration">
-      <div class="d-flex justify-center align-center mt-3">
-        <span>
-          0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한 마이그레이션이 필요합니다.
-        </span>
-      </div>
-      <div class="d-flex justify-center align-center mt-3">
-        <v-btn color="#b48ead" class="me-2" @click="clickMigration()">
-          데이터 마이그레이션하기
-        </v-btn>
-      </div>
-    </div>
-
     <div class="d-flex justify-center align-center mt-6">
       <v-btn icon variant="text" color="white" class="me-5" @click="clickPreviousMonth()">
         <v-icon size="large">mdi-chevron-left</v-icon>
@@ -269,7 +256,7 @@ let counterInterval: number | null = null;
 const tweened = reactive({ number: 0 });
 
 // Store refs
-const { needMigration, workingGuideTime, underLawTime } = storeToRefs(store);
+const { workingGuideTime, underLawTime } = storeToRefs(store);
 
 const freqQuestions = frequencyQuestions;
 
@@ -511,14 +498,6 @@ function clickNextMonth() {
   }
   router.push(`/${formatYearMonth(y, m)}`);
   loadPage(y, m);
-}
-
-async function clickMigration() {
-  await store.doMigration();
-  // Reload page data after migration
-  loadPage(store.year, store.month);
-  snackbarText.value = "마이그레이션 완료";
-  snackbar.value = true;
 }
 
 async function clickDataCopy() {

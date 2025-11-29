@@ -56,16 +56,12 @@ export const useStore = defineStore('store', {
             underLawTime: 0, // Minutes
             workingGuideTime: 0, // Minutes
             workOffTime: 0, // Minutes
-            needMigration: false,
         }
     },
 
     actions: {
         load(year: number, month: number) {
-            const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
-            // Check if V3 data is empty but V2 exists to determine migration need
-            const v3Data = JSON.parse(localStorage.getItem(storageKey) || "[]");
-            this.needMigration = oldData.length > 0 && v3Data.length === 0;
+            localStorage.removeItem(oldStorageKey)
 
             const data = getDataFromStorage();
 
@@ -91,48 +87,6 @@ export const useStore = defineStore('store', {
                 this.workOffTime = 0;
             }
             saveData(data);
-        },
-        async doMigration() {
-            const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
-            const data = getDataFromStorage();
-            
-            // Migration: Convert hours to minutes
-            oldData.forEach(oldItem => {
-                // Find corresponding item in new data (initialized by getDataFromStorage) or create new if not exists (though getDataFromStorage handles initialization for current/next year)
-                // But oldData might contain older years.
-                // Simply adding them might duplicate if they are already initialized? 
-                // getDataFromStorage initializes current and next year.
-                // Ideally we merge.
-                
-                // For simplicity, we try to find existing entry in 'data', update it. If not found, add it.
-                const existing = data.find(d => d.year === oldItem.year && d.month === oldItem.month);
-                
-                const newOvertime = new Overtime(
-                    oldItem.overtime.basicPay,
-                    Math.round(oldItem.overtime.nowWorkingTime * 60),
-                    Math.round(oldItem.overtime.vacationTime * 60),
-                    Math.round((oldItem.overtime.workOffTime || 0) * 60)
-                );
-                newOvertime.overNightTime = Math.round((oldItem.overtime.overNightTime || 0) * 60);
-
-                if (existing) {
-                    existing.overtime = newOvertime;
-                } else {
-                    data.push(new YearMonth(oldItem.year, oldItem.month, newOvertime));
-                }
-            });
-            
-            saveData(data);
-            // localStorage.removeItem(oldStorageKey); // Optional: keep for safety or remove? 
-            // User prompt didn't specify keeping, but usually good to keep for backup until confirmed. 
-            // But to stop showing migration message, we should probably rename or set flag.
-            // Since logic checks "oldData.length > 0 && v3Data.length === 0", once v3Data is populated, migration flag might turn false?
-            // No, "oldData.length > 0" is always true if we don't delete.
-            // "v3Data.length === 0" will be false after migration.
-            // So migration message will disappear.
-            
-            this.needMigration = false;
-            return true;
         },
         loadPreviousBasicPay() {
             const data: YearMonth[] = getDataFromStorage();
