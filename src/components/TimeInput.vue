@@ -1,29 +1,44 @@
 <template>
-  <div class="d-flex align-center">
-    <v-text-field
-      v-model.number="hours"
-      :label="label"
-      type="number"
-      class="me-2 time-input-field text-white"
-      hide-details
-      variant="outlined"
-      suffix="시간"
-      color="white"
-      base-color="white"
-      @update:model-value="updateValue"
-    />
-    <v-text-field
-      v-model.number="minutes"
-      label="분"
-      type="number"
-      hide-details
-      class="me-2 time-input-field text-white"
-      variant="outlined"
-      base-color="white"
-      color="white"
-      suffix="분"
-      @update:model-value="updateValue"
-    />
+  <div>
+    <div class="d-flex align-center w-100" style="gap: 8px">
+      <v-text-field
+        v-model.number="hours"
+        type="number"
+        class="time-input-field text-white"
+        hide-details
+        variant="underlined"
+        suffix="시간"
+        color="white"
+        base-color="white"
+        hide-spin-buttons
+        @update:model-value="updateValue"
+      />
+      <v-text-field
+        v-model.number="minutes"
+        type="number"
+        hide-details
+        class="time-input-field text-white"
+        variant="underlined"
+        base-color="white"
+        color="white"
+        suffix="분"
+        hide-spin-buttons
+        @update:model-value="updateValue"
+      />
+    </div>
+    <div class="d-flex mt-2 w-100" style="gap: 8px">
+      <v-chip
+        v-for="btn in shortcutButtons"
+        :key="btn.label"
+        size="small"
+        color="white"
+        variant="outlined"
+        class="flex-grow-1 justify-center"
+        @click="addTime(btn.value)"
+      >
+        {{ btn.label }}
+      </v-chip>
+    </div>
   </div>
 </template>
 
@@ -33,12 +48,22 @@ import { ref, watch, defineProps, defineEmits } from "vue";
 const props = defineProps<{
   modelValue: number;
   label: string;
+  shortcuts?: { label: string; value: number }[];
 }>();
 
 const emit = defineEmits(["update:modelValue"]);
 
 const hours = ref(0);
 const minutes = ref(0);
+
+const defaultShortcuts = [
+  { label: "+10분", value: 10 },
+  { label: "+30분", value: 30 },
+  { label: "+1시간", value: 60 },
+  { label: "+2시간", value: 120 },
+];
+
+const shortcutButtons = props.shortcuts || defaultShortcuts;
 
 watch(
   () => props.modelValue,
@@ -55,6 +80,12 @@ function updateValue() {
   if (isNaN(h)) h = 0;
   if (isNaN(m)) m = 0;
   emit("update:modelValue", h * 60 + m);
+}
+
+function addTime(addMinutes: number) {
+  let currentTotal = (Number(hours.value) || 0) * 60 + (Number(minutes.value) || 0);
+  let newTotal = currentTotal + addMinutes;
+  emit("update:modelValue", newTotal);
 }
 </script>
 

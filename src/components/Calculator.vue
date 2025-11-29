@@ -38,7 +38,6 @@
         <span class="body">이번달 총 계획 시간</span>
         <TimeInput
           :model-value="nowWorkingTime"
-          class="mt-2"
           label="근로"
           @update:model-value="inputNowWorkingTime"
         />
@@ -47,7 +46,6 @@
         <span class="body">야간근로</span>
         <TimeInput
           :model-value="overNightTime"
-          class="mt-2"
           label="야간"
           @update:model-value="inputOverNightTime"
         />
@@ -58,7 +56,6 @@
         <span class="body">휴일근로</span>
         <TimeInput
           :model-value="workOffTime"
-          class="mt-2"
           label="휴일"
           @update:model-value="inputWorkOffTime"
         />
@@ -67,15 +64,15 @@
         <span class="body">휴가시간</span>
         <TimeInput
           :model-value="vacationTime"
-          class="mt-2"
           label="휴가"
+          :shortcuts="vacationShortcuts"
           @update:model-value="inputVacationTime"
         />
       </v-col>
     </v-row>
 
     <div class="d-flex justify-center align-center mt-12">
-      <ul>
+      <ul class="text-start">
         <li>
           <span class="text-h6 me-2">시급 {{ hourWageText }}원</span>
         </li>
@@ -276,6 +273,12 @@ const { needMigration, workingGuideTime, underLawTime } = storeToRefs(store);
 
 const freqQuestions = frequencyQuestions;
 
+const vacationShortcuts = [
+  { label: "+2시간", value: 120 },
+  { label: "+4시간", value: 240 },
+  { label: "+8시간", value: 480 },
+];
+
 // Computed
 const hourWageText = computed(() => withCommas(hourWage.value));
 
@@ -418,7 +421,7 @@ function withCommas(x: number) {
 function formatMinutes(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
-  return `${h}h ${m}m`;
+  return `${h}시간 ${m}분`;
 }
 
 function loadPage(y: number, m: number) {
@@ -563,14 +566,5 @@ span {
 }
 p {
   color: #d8dee9;
-}
-.inputNumber >>> input[type="number"] {
-  -moz-appearance: textfield;
-}
-.inputNumber >>> input::-webkit-outer-spin-button,
-.inputNumber >>> input::-webkit-inner-spin-button {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
 }
 </style>
