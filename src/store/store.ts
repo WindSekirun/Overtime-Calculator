@@ -7,7 +7,7 @@ import { defineStore } from "pinia";
 export const storageKey = "OVERTIME_CALCULATOR_DATA_V3";
 export const oldStorageKey = "OVERTIME_CALCULATOR_DATA_2";
 
-function getDataFromStorage(): YearMonth[] {
+export function getDataFromStorage(): YearMonth[] {
     const data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
     const year = getYear();
@@ -134,12 +134,6 @@ export const useStore = defineStore('store', {
                 overtime.overtime.workOffTime = workOffTime;
             });
             this.workOffTime = workOffTime;
-        },
-        getDataFromStorage() {
-            return getDataFromStorage()
-        },
-        restoreData(data: YearMonth[]) {
-            saveData(data);
         }
     }
 })

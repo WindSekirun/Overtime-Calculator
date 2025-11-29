@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
-import { useStore, storageKey, oldStorageKey } from '@/store/store';
+import { useStore, storageKey, oldStorageKey, getDataFromStorage } from '@/store/store';
 import * as dateUtils from '@/util/date'; // Alias for the module
 import { TimeTable, timeTables } from '@/model/timetable'; // timeTables 추가
 import { Overtime } from '@/model/overtime'; // Overtime 모델 추가
@@ -26,7 +26,7 @@ describe('Store', () => {
 
   it('should initialize data for current year', () => {
     const store = useStore();
-    const data = store.getDataFromStorage();
+    const data = getDataFromStorage();
     const currentYear = dateUtils.getYear(); // Use dateUtils.getYear()
     
     expect(data.some(d => d.year === currentYear)).toBe(true);
@@ -36,7 +36,7 @@ describe('Store', () => {
   it('should initialize data for next year if in timetable', () => {
     (dateUtils.getYear as Vi.Mock).mockReturnValue(2025); // Use mockReturnValue for the mocked function
     const store = useStore();
-    const data = store.getDataFromStorage();
+    const data = getDataFromStorage();
     const nextYear = 2026;
     
     expect(data.some(d => d.year === nextYear)).toBe(true);
@@ -46,7 +46,7 @@ describe('Store', () => {
   it('should not initialize data for next year if not in timetable', () => {
     (dateUtils.getYear as Vi.Mock).mockReturnValue(2027); // Use mockReturnValue for the mocked function
     const store = useStore();
-    const data = store.getDataFromStorage();
+    const data = getDataFromStorage();
     const nextYear = 2028;
     
     expect(data.some(d => d.year === nextYear)).toBe(false);
@@ -142,18 +142,6 @@ describe('Store', () => {
     expect(item?.overtime?.vacationTime).toBe(20);
     expect(item?.overtime?.overNightTime).toBe(30);
     expect(item?.overtime?.workOffTime).toBe(40);
-  });
-
-  it('should restore data', () => {
-    const store = useStore();
-    const backupData = [
-        new YearMonth(2099, 1, new Overtime(999, 0, 0, 0))
-    ];
-    store.restoreData(backupData as any);
-    
-    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    expect(stored[0].year).toBe(2099);
-    expect(stored[0].overtime.basicPay).toBe(999);
   });
 
   // Test for modifyYearMonth's else branch (when overtime not found)

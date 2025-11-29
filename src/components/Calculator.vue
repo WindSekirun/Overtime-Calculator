@@ -190,25 +190,7 @@
             </v-btn>
           </v-col>
         </v-row>
-        <v-row class="mt-1">
-          <v-col cols="6">
-            <v-btn color="#ebcb8b" @click="clickDataCopy()" block style="color: #2e3440">
-              데이터 복사
-            </v-btn>
-          </v-col>
-          <v-col cols="6">
-            <v-btn color="#ebcb8b" @click="clickDataRestore()" block style="color: #2e3440">
-              데이터 복구
-            </v-btn>
-          </v-col>
-        </v-row>
       </v-sheet>
-    </div>
-
-    <div class="text-center">
-      <v-snackbar v-model="snackbar" :timeout="3000" location="top" color="purple">
-        {{ snackbarText }}
-      </v-snackbar>
     </div>
   </div>
 </template>
@@ -220,7 +202,6 @@ import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
 import { formatYearMonth, getUnderLawTime, getYear } from "@/util/date";
-import { YearMonth } from "@/model/month";
 import { roundNumber } from "@/util/number";
 import { useDisplay } from "vuetify";
 import { useRoute, useRouter } from "vue-router";
@@ -243,8 +224,6 @@ const workOffTime = ref(0); // Minutes
 const freqDialog = ref(false);
 const howDialog = ref(false);
 const hourWage = ref(0);
-const snackbar = ref(false);
-const snackbarText = ref("");
 
 // Counter for continuous wage display increment
 const displayedWage = ref(0);
@@ -498,28 +477,6 @@ function clickNextMonth() {
   }
   router.push(`/${formatYearMonth(y, m)}`);
   loadPage(y, m);
-}
-
-async function clickDataCopy() {
-  const list = store.getDataFromStorage();
-  const json = JSON.stringify(list);
-  await window.navigator.clipboard.writeText(json);
-  snackbarText.value = "데이터가 복사되었습니다.";
-  snackbar.value = true;
-}
-
-async function clickDataRestore() {
-  try {
-    const response = await window.navigator.clipboard.readText();
-    const list: YearMonth[] = JSON.parse(response);
-    store.restoreData(list);
-    snackbarText.value = "데이터 복구에 성공했습니다. 새로고침 후 적용됩니다.";
-    snackbar.value = true;
-    loadPage(store.year, store.month); // Reload
-  } catch {
-    snackbarText.value = "데이터 복구에 실패했습니다.";
-    snackbar.value = true;
-  }
 }
 
 // Lifecycle

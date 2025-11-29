@@ -2,12 +2,6 @@ export class TimeTable {
   year: number;
   month: number;
   workingTime: number;
-
-  constructor(year: number, month: number, workingTime: number) {
-    this.year = year;
-    this.month = month;
-    this.workingTime = workingTime;
-  }
 }
 
 export const timeTables: TimeTable[] = [
