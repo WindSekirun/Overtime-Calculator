@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "lib": [],
+    "types": ["node", "@playwright/test/globals"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "tests/e2e/**/*.ts",
+    "tests/e2e/**/*.tsx",
+    "tests/e2e/**/*.vue"
+  ]
+}
