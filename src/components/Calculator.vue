@@ -634,8 +634,8 @@ export default class Calculator extends Vue {
   }
 
   clickDemoMode() {
-    this.basicPay = "1000000";
-    this.hourWage = 1000000 / 209.0;
+    this.basicPay = "2156880";
+    this.hourWage = +this.basicPay / 209.0;
   }
 
   clickLoadPreviousPay() {
