@@ -1,99 +1,91 @@
 # Overtime Calculator
 
 ## Project Overview
-**Overtime Calculator** is a web-based application designed to help users calculate their overtime pay, specifically tailored for the Korean working environment (considering the abolition of the comprehensive wage system). It allows users to input their basic pay and working hours (regular, overtime, night, holiday) to estimate their extra earnings.
+**Overtime Calculator** is a modern web-based application designed to help users calculate their overtime pay, tailored for the Korean working environment. It helps estimate extra earnings based on basic pay and working hours (regular, overtime, night, holiday).
 
 **Key Features:**
 *   **Overtime Calculation:** Calculates pay based on standard working hours (40h/week) and legal limits (52h/week).
-*   **Data Persistence:** Saves monthly data locally using `localStorage`.
-*   **Data Migration:** Supports migration from older data formats.
-*   **Release Notes:** Fetches and displays the latest release notes from GitHub.
+*   **Minute-based Precision:** All time calculations are performed in minutes (integer) to avoid floating-point errors.
+*   **Real-time Counter:** Displays a "money earning" effect that increments in real-time based on the hourly wage.
+*   **Smooth Animations:** Uses **GSAP** for smooth number transitions.
+*   **Data Persistence:** Saves monthly data locally using `localStorage` (Migrated to V3 format).
 
 ## Tech Stack
-*   **Framework:** Vue.js 2 (using Class-based API)
-*   **UI Library:** Vuetify 2
-*   **Language:** TypeScript
-*   **State Management:** Pinia (with `PiniaVuePlugin` for Vue 2)
-*   **Build Tool:** Vue CLI
+*   **Framework:** Vue.js 3.5 (Composition API with `<script setup>`)
+*   **Build Tool:** Vite 5
+*   **UI Library:** Vuetify 3
+*   **Language:** TypeScript 5
+*   **State Management:** Pinia 2
+*   **Animation:** GSAP
 *   **Date Handling:** Luxon
-*   **Markdown:** Marked (for rendering release notes)
+*   **Markdown:** Marked
 
 ## Getting Started
 
 ### Prerequisites
-*   Node.js
-*   npm or yarn
+*   Node.js (LTS recommended)
+*   npm
 
 ### Installation
 ```bash
-# Install dependencies
-yarn install
-# or
 npm install
 ```
 
 ### Development
-Start the local development server:
+Start the local development server (Vite):
 ```bash
-# Run on localhost:8080
-yarn serve
-# or
-npm run serve
+npm run dev
 ```
+Access the app at `http://localhost:5173` (default Vite port).
 
 ### Build
 Build the project for production:
 ```bash
-yarn build
-# or
 npm run build
 ```
 
 ### Linting
 Lint and fix files:
 ```bash
-yarn lint
-# or
 npm run lint
 ```
 
 ## Architecture & Conventions
 
-### component Style
-This project uses **Vue Class Component** and **Vue Property Decorator**. Components are defined as classes extending `Vue`.
+### Component Style
+This project uses the **Vue 3 Composition API** with `<script setup>` syntax.
+*   **Reactivity:** Uses `ref`, `computed`, and `watch`.
+*   **Props/Emits:** Typed using `defineProps` and `defineEmits`.
 
 **Example:**
 ```typescript
-import { Component, Vue } from "vue-property-decorator";
+<script setup lang="ts">
+import { ref, computed } from 'vue'
 
-@Component({
-  components: { ... },
-})
-export default class MyComponent extends Vue {
-  // Data properties
-  myValue = 0;
+const props = defineProps<{ value: number }>()
+const count = ref(0)
 
-  // Computed properties
-  get myComputed() { ... }
-
-  // Methods
-  myMethod() { ... }
-}
+const double = computed(() => count.value * 2)
+</script>
 ```
 
 ### State Management (Pinia)
-State is managed using Pinia. The store is defined in `src/store/store.ts`.
-*   **Access:** `useStore()` provides access to the store instance.
-*   **Persistence:** The store manually handles saving/loading data to `localStorage` (`OVERTIME_CALCULATOR_DATA_2`).
+State is managed using Pinia stores (`src/store/store.ts`).
+*   **Access:** `useStore()` gives access to the store.
+*   **Destructuring:** Use `storeToRefs(store)` when destructuring reactive state to maintain reactivity.
+*   **Persistence:** The store handles saving/loading data to `localStorage`.
+*   **Migration:** Includes logic to migrate old Vue 2 data formats to the new minute-based V3 format.
 
-### Project Structure
-*   `src/components/`: Vue components (Main logic is in `Calculator.vue`).
-*   `src/model/`: TypeScript classes/interfaces defining the data domain (e.g., `Overtime`, `YearMonth`, `ReleaseInfo`).
-*   `src/store/`: Pinia store definitions and localStorage logic.
-*   `src/util/`: Utility functions for dates and number formatting.
-*   `src/plugins/`: Vuetify configuration.
+### Time Calculation Standard
+*   **Internal Logic:** All calculations are done in **minutes** (Integer).
+    *   e.g., 1 hour 30 minutes = `90`
+*   **Display:** Converted to `Xh Ym` format for UI.
+*   **Input:** The `TimeInput` component handles the conversion between user input (Hours/Minutes) and internal minute values.
 
 ### Key Files
-*   **`src/components/Calculator.vue`**: The primary component containing the UI and calculation display logic.
-*   **`src/store/store.ts`**: Central store handling business logic for data retrieval, modification, and storage.
-*   **`src/main.ts`**: Entry point, initializes Vue, Vuetify, and Pinia.
+*   **`vite.config.ts`**: Vite configuration (plugins, aliases).
+*   **`src/main.ts`**: App entry point (Pinia, Router, Vuetify setup).
+*   **`src/components/Calculator.vue`**: Main logic and UI. Handles the real-time wage counter and GSAP animations.
+*   **`src/components/TimeInput.vue`**: Reusable component for inputting time (Hours/Minutes) with white text styling.
+*   **`src/store/store.ts`**: Business logic for overtime calculation and data storage.
+*   **`src/model/result.ts`**: Helper classes for building the calculation breakdown text.
