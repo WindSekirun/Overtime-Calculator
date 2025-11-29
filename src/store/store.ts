@@ -1,16 +1,11 @@
 import { YearMonth } from "@/model/month";
 import { Overtime } from "@/model/overtime";
-import { ReleaseInfo } from "@/model/release";
 import { timeTables } from "@/model/timetable";
 import { getUnderLawTime, getYear } from "@/util/date";
-import axios from "axios";
 import { defineStore } from "pinia";
-import { marked } from "marked";
-import { DateTime } from "luxon";
 
 export const storageKey = "OVERTIME_CALCULATOR_DATA_V3";
 export const oldStorageKey = "OVERTIME_CALCULATOR_DATA_2";
-export const newReleaseKey = "OVERTIME_CALCULATOR_NEW_RELEASE";
 
 function getDataFromStorage(): YearMonth[] {
     const data: YearMonth[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -62,8 +57,6 @@ export const useStore = defineStore('store', {
             workingGuideTime: 0, // Minutes
             workOffTime: 0, // Minutes
             needMigration: false,
-            releaseInfo: null as ReleaseInfo | null,
-            needShowReleaseInfo: false,
         }
     },
 
@@ -98,34 +91,6 @@ export const useStore = defineStore('store', {
                 this.workOffTime = 0;
             }
             saveData(data);
-        },
-        async loadRelease() {
-            const renderer = new marked.Renderer();
-            renderer.link = function(href, title, text) {
-                const render = `${text} <a target='_blank' href="${href}"> link </a>`
-                return render;
-            }
-            renderer.heading = function(text, level, raw, slugger) {
-                const render = marked.Renderer.prototype.heading.call(this, text, level, raw, slugger);
-                return "<br />" + render + "<br />";
-            }
-            marked.setOptions({
-                renderer: renderer,
-                breaks: true,
-            })
-
-            try {
-                const response = (await axios.get("https://api.github.com/repos/windsekirun/overtime-calculator/releases/latest")).data;
-                const tagName = response["tag_name"];
-                const body = response["body"];
-                const date = DateTime.fromISO(response["created_at"]).toFormat("yyyy.MM.dd");
-                const info = new ReleaseInfo(tagName, marked(body), date);
-    
-                this.releaseInfo = info;
-                this.needShowReleaseInfo = tagName != localStorage.getItem(newReleaseKey);
-            } catch (e) {
-                console.error("Failed to load release info", e);
-            }
         },
         async doMigration() {
             const oldData: YearMonth[] = JSON.parse(localStorage.getItem(oldStorageKey) || "[]");
@@ -221,12 +186,6 @@ export const useStore = defineStore('store', {
         },
         restoreData(data: YearMonth[]) {
             saveData(data);
-        },
-        saveNotShowReleaseDialog() {
-            if (this.releaseInfo) {
-                this.needShowReleaseInfo = false;
-                localStorage.setItem(newReleaseKey, this.releaseInfo.name);
-            }
         }
     }
 })

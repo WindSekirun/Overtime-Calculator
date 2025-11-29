@@ -2,10 +2,9 @@
   <div class="text-center">
     <div v-if="needMigration">
       <div class="d-flex justify-center align-center mt-3">
-        <span
-          >0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한 마이그레이션이
-          필요합니다.</span
-        >
+        <span>
+          0.2.0 버전부터 데이터 형식이 변경되어, 기존 버전 데이터에 대한 마이그레이션이 필요합니다.
+        </span>
       </div>
       <div class="d-flex justify-center align-center mt-3">
         <v-btn color="#b48ead" class="me-2" @click="clickMigration()">
@@ -178,30 +177,6 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-      <v-dialog v-model="releaseDialog" width="500" persistent v-if="releaseInfo">
-        <v-card color="#3b4252">
-          <v-card-title class="text-h5" style="background-color: #434c5e; color: #eceff4">
-            New: v{{ releaseInfo.name }} ({{ releaseInfo.date }})
-          </v-card-title>
-          <v-card-text class="mt-5" style="color: #eceff4">
-            <span v-html="releaseInfo.body" class="release"></span>
-          </v-card-text>
-          <v-divider />
-          <v-card-actions>
-            <v-switch
-              color="orange"
-              v-model="releaseCheckBox"
-              label="다시 알리지 않기"
-              hide-details
-              density="compact"
-              inset
-            />
-            <v-spacer></v-spacer>
-            <v-btn color="#d8dee9" variant="text" @click="closeReleaseDialog()"> 닫기 </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </div>
 
     <div v-if="showSetting" class="mt-6">
@@ -255,8 +230,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
-import gsap from 'gsap'
+import { ref, computed, onMounted, onUnmounted, watch, reactive } from "vue";
+import gsap from "gsap";
 import { useStore } from "@/store/store";
 import { frequencyQuestions } from "@/model/question";
 import { CalculatedResult, DescriptionBuilder } from "@/model/result";
@@ -283,24 +258,21 @@ const workOffTime = ref(0); // Minutes
 
 const freqDialog = ref(false);
 const howDialog = ref(false);
-const releaseDialog = ref(false);
-const releaseCheckBox = ref(false);
 const hourWage = ref(0);
 const snackbar = ref(false);
-const snackbarText = ref("")
+const snackbarText = ref("");
 
 // Counter for continuous wage display increment
-const displayedWage = ref(0)
-const baseCalculatedWage = ref(0) // Base wage without time-based increment
-const counterSeconds = ref(0)
+const displayedWage = ref(0);
+const baseCalculatedWage = ref(0); // Base wage without time-based increment
+const counterSeconds = ref(0);
 let counterInterval: number | null = null;
 
 // Tweening
-const tweened = reactive({ number: 0 })
+const tweened = reactive({ number: 0 });
 
 // Store refs
-const { needMigration, workingGuideTime, underLawTime, releaseInfo, needShowReleaseInfo } =
-  storeToRefs(store);
+const { needMigration, workingGuideTime, underLawTime } = storeToRefs(store);
 
 const freqQuestions = frequencyQuestions;
 
@@ -421,16 +393,20 @@ const calculated = computed(() => {
 });
 
 // Watch base calculated wage to reset counter
-watch(() => calculated.value.amount, (newWage) => {
-    baseCalculatedWage.value = newWage
-    counterSeconds.value = 0
-    displayedWage.value = newWage // Immediately update displayed wage to new base
-}, { immediate: true })
+watch(
+  () => calculated.value.amount,
+  (newWage) => {
+    baseCalculatedWage.value = newWage;
+    counterSeconds.value = 0;
+    displayedWage.value = newWage; // Immediately update displayed wage to new base
+  },
+  { immediate: true }
+);
 
 // Animate displayed wage
 watch(displayedWage, (n) => {
-  gsap.to(tweened, { duration: 0.5, number: Number(n) || 0 })
-})
+  gsap.to(tweened, { duration: 0.5, number: Number(n) || 0 });
+});
 
 // Methods
 function withCommas(x: number) {
@@ -529,13 +505,6 @@ async function clickMigration() {
   snackbar.value = true;
 }
 
-function closeReleaseDialog() {
-  releaseDialog.value = false;
-  if (releaseCheckBox.value) {
-    store.saveNotShowReleaseDialog();
-  }
-}
-
 async function clickDataCopy() {
   const list = store.getDataFromStorage();
   const json = JSON.stringify(list);
@@ -572,25 +541,19 @@ onMounted(async () => {
 
   loadPage(y, m);
 
-  await store.loadRelease();
-  if (needShowReleaseInfo.value) {
-    releaseDialog.value = true;
-  }
-
-    // Start continuous counter
-    counterInterval = setInterval(() => {
-        counterSeconds.value++
-        displayedWage.value = baseCalculatedWage.value + (counterSeconds.value * (perMinutes.value / 60))
-    }, 1000)
-})
+  // Start continuous counter
+  counterInterval = setInterval(() => {
+    counterSeconds.value++;
+    displayedWage.value = baseCalculatedWage.value + counterSeconds.value * (perMinutes.value / 60);
+  }, 1000);
+});
 
 onUnmounted(() => {
-    if (counterInterval) {
-        clearInterval(counterInterval)
-        counterInterval = null
-    }
-})
-
+  if (counterInterval) {
+    clearInterval(counterInterval);
+    counterInterval = null;
+  }
+});
 </script>
 
 <style scoped>
