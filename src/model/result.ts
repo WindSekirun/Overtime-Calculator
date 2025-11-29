@@ -31,7 +31,7 @@ export class CalculatedResult {
             const sumMinutes = roundNumber(multiplyList.reduce((prev, current) => prev + current));
             const h = Math.floor(sumMinutes / 60);
             const m = Math.round(sumMinutes % 60);
-            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${h}h ${m}m)`)
+            description.push(`⬤ 최종 계산금액: <b>${this.origin}</b>원 (${h}시간 ${m}분)`)
             return description.join("\n");
         }
     }
@@ -58,11 +58,11 @@ export class DescriptionBuilder {
         
         const h = Math.floor(timeMinutes / 60);
         const m = Math.round(timeMinutes % 60);
-        const timeStr = `${h}h ${m}m`;
+        const timeStr = `${h}시간 ${m}분`;
 
         const effH = Math.floor(effectiveMinutes / 60);
         const effM = Math.round(effectiveMinutes % 60);
-        const effStr = `${effH}h ${effM}m`;
+        const effStr = `${effH}시간 ${effM}분`;
         
         // Wage calculation: (Effective Minutes / 60) * HourWage
         const calculated = Math.ceil((effectiveMinutes / 60) * hourWage)
