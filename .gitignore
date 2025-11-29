@@ -24,3 +24,5 @@ pnpm-debug.log*
 
 test-results/
 playwright-report/
+.nyc_output/
+coverage/

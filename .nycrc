@@ -1,0 +1,10 @@
+{
+  "extends": "@istanbuljs/nyc-config-typescript",
+  "all": true,
+  "check-coverage": false,
+  "report-dir": "coverage",
+  "reporter": ["html", "text-summary", "lcov"],
+  "include": ["src/**/*.{ts,vue}"],
+  "exclude": ["src/main.ts", "src/plugins/**", "**/*.d.ts"],
+  "extension": [".ts", ".vue"]
+}

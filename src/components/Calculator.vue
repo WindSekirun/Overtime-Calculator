@@ -395,6 +395,19 @@ const calculated = computed(() => {
   );
 });
 
+// Watch for route changes to reload data
+watch(
+  () => route.params,
+  (newParams) => {
+    const param = newParams.date;
+    if (param) {
+      const y = Number(param.toString().slice(0, 4));
+      const m = Number(param.toString().slice(4, 6));
+      loadPage(y, m);
+    }
+  }
+);
+
 // Watch base calculated wage to reset counter
 watch(
   () => calculated.value.amount,

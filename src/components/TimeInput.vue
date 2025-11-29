@@ -3,6 +3,7 @@
     <div class="d-flex align-center w-100" style="gap: 8px">
       <v-text-field
         v-model.number="hours"
+        :label="label"
         type="number"
         class="time-input-field text-white"
         hide-details
@@ -15,6 +16,7 @@
       />
       <v-text-field
         v-model.number="minutes"
+        label="분"
         type="number"
         hide-details
         class="time-input-field text-white"
@@ -43,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps<{
   modelValue: number;
