@@ -1,1 +1,1 @@
-node scripts/git-tag-version.js
+node scripts/git-tag-version.cjs
