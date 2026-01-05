@@ -58,8 +58,8 @@ export const timeTables: TimeTable[] = [
   { year: 2026, month: 3, workingTime: 168 },
   { year: 2026, month: 4, workingTime: 176 },
   { year: 2026, month: 5, workingTime: 152 },
-  { year: 2026, month: 6, workingTime: 176 },
-  { year: 2026, month: 7, workingTime: 184 },
+  { year: 2026, month: 6, workingTime: 168 }, // 지방선거
+  { year: 2026, month: 7, workingTime: 176 }, // 제헌절
   { year: 2026, month: 8, workingTime: 160 },
   { year: 2026, month: 9, workingTime: 160 },
   { year: 2026, month: 10, workingTime: 160 },
